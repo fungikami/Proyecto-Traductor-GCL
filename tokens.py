@@ -8,8 +8,6 @@ from ply.lex import LexToken
 
 # Palabras reservadas del lenguaje (Duda de si éstas son las palabras reservadas)
 reserved = {
-    'num' : 'TkNum',
-    'string' : 'TkString',
     'true' : 'TkTrue',
     'false' : 'TkFalse',
 }
@@ -28,14 +26,14 @@ tokens += list(reserved.values())
 t_ignore = ' \t'
 
 # Expresiones regulares para tokens simples
-t_TkOBlock = r'\|\['       
-t_TkCBlock = r'\]\|'
+t_TkOBlock = r'\|\['       
+t_TkCBlock = r'\]\|'
 t_TkSoForth = r'\.\.'
-t_TkComma = r','
-t_TkOpenPar = r'\('
-t_TkClosePar = r'\)'
-t_TkAsig = r':='
-t_TkSemicolon  = r';'
+t_TkComma = r','
+t_TkOpenPar = r'\('
+t_TkClosePar = r'\)'
+t_TkAsig = r':='
+t_TkSemicolon  = r';'
 t_TkArrow = r'-->'
 t_TkPlus = r'\+'
 t_TkMinus = r'-'
@@ -56,7 +54,14 @@ t_TkConcat = r'\.'
 
 # Expresiones regulares para dígitos, caracteres... 
 def t_TkId(t):
-    return "to-do"
+    r'[a-zA-Z][a-zA-Z0-9_]*'
+    t.type = reserved.get(t.value, 'TkId')
+    return t
+
+def t_TkNum(t):
+    r'\d+'
+    t.value = int(t.value)
+    return t
 
 # Comentarios de tipo: // Esto es un comentario. Debe ser ignorado.
 def t_comment(t):
