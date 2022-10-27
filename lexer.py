@@ -125,6 +125,11 @@ if __name__ == '__main__':
         print("Usage: python tokens.py <input_file>")
         exit(1)
     
+    if not argv[1].endswith(".gcl"):
+        print("Error: Invalid file extension (must be .gcl)")
+        print("Usage: python tokens.py <input_file>")
+        exit(1)
+
     global data
     f = open(argv[1], 'r')
     data = f.read()
