@@ -3,7 +3,6 @@
 
 """
 
-import re
 from ply.lex import lex
 from sys import argv
 
@@ -78,12 +77,6 @@ def t_TkNum(t):
     t.value = int(t.value)
     return t
 
-# Copilot genereted
-# def t_TkString(t):
-#     r'\".*?\"'
-#     t.value = t.value[1:-1]
-#     return t
-
 def t_TkString(t):
     r'".*"'
     t.value = t.value[1:-1]
@@ -96,9 +89,6 @@ def t_comment(t):
 
 def t_newline(t):
     r'\n+'
-    # print("New line t: %s" % t)
-    # print("lexer: " + str(t.lexer))
-    # print("t.value: " + str(len(t.value)))
     t.lexer.lineno += len(t.value)
 
 # Errores: frases incorrectas o mal formadas
