@@ -1,6 +1,10 @@
 """ 
-    Documentación
+    Implementación de un analizador léxico para el lenguaje GCL.
+    Se utiliza la librería PLY (Python Lex-Yacc) para la generación de los 
+    analizadores léxico y sintáctico.
 
+    Autores: Leonel Guerrero, Ka Fung
+    Fecha: 28/10/2022
 """
 
 from ply.lex import lex
@@ -49,6 +53,7 @@ t_TkClosePar = r'\)'
 t_TkAsig = r':='
 t_TkSemicolon  = r';'
 t_TkArrow = r'-->'
+t_TkGuard = r'\[\]'
 t_TkPlus = r'\+'
 t_TkMinus = r'-'
 t_TkMult = r'\*'
