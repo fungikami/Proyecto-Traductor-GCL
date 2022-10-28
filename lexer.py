@@ -143,12 +143,15 @@ if __name__ == '__main__':
         tok = lexer.token()
         if not tok:
             break
-        if tok.type == 'TkId':
-            column = find_column(data, tok)
-            valid_tokens.append("TkId(\"%s\") %d %d" % (tok.value, tok.lineno, column))
-            continue
 
         column = find_column(data, tok)
+        if tok.type == 'TkId':
+            valid_tokens.append("TkId(\"%s\") %d %d" % (tok.value, tok.lineno, column))
+            continue
+        if tok.type == 'TkNum':
+            valid_tokens.append("TkNum(%d) %d %d" % (tok.value, tok.lineno, column))
+            continue
+
         valid_tokens.append("%s %d %d" % (tok.type, tok.lineno, column))
 
     # Imprimir los tokens válidos
