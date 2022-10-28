@@ -33,7 +33,7 @@ reserved = {
 # Tokens del lenguaje
 tokens = [
     'TkOBlock', 'TkCBlock', 'TkSoForth', 'TkComma', 'TkOpenPar', 'TkClosePar',
-    'TkAsig', 'TkSemicolon', 'TkArrow', 'TkGuard', 'TkPlus', 'TkMinus', 'TkMult', 
+    'TkAsig', 'TkSemicolon', 'TkArrow', '   ', 'TkPlus', 'TkMinus', 'TkMult', 
     'TkOr', 'TkAnd', 'TkNot', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater', 'TkEqual', 
     'TkNEqual', 'TkOBracket', 'TkCBracket', 'TkTwoPoints', 'TkConcat',
 ]
@@ -117,12 +117,12 @@ if __name__ == '__main__':
     # Leer el archivo de entrada
     if len(argv) != 2:
         print("Error: Invalid number of arguments")
-        print("Usage: python tokens.py <input_file>")
+        print("Usage: python lexer.py <input_file>")
         exit(1)
     
     if not argv[1].endswith(".gcl"):
         print("Error: Invalid file extension (must be .gcl)")
-        print("Usage: python tokens.py <input_file>")
+        print("Usage: python lexer.py <input_file>")
         exit(1)
 
     global data
