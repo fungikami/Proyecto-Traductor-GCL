@@ -33,7 +33,7 @@ reserved = {
 # Tokens del lenguaje
 tokens = [
     'TkOBlock', 'TkCBlock', 'TkSoForth', 'TkComma', 'TkOpenPar', 'TkClosePar',
-    'TkAsig', 'TkSemicolon', 'TkArrow', 't_TkGuard', 'TkPlus', 'TkMinus', 'TkMult', 
+    'TkAsig', 'TkSemicolon', 'TkArrow', 'TkGuard', 'TkPlus', 'TkMinus', 'TkMult', 
     'TkOr', 'TkAnd', 'TkNot', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater', 'TkEqual', 
     'TkNEqual', 'TkOBracket', 'TkCBracket', 'TkTwoPoints', 'TkConcat',
 ]
