@@ -1,7 +1,6 @@
 """ 
     Implementación de un analizador léxico para el lenguaje GCL.
-    Se utiliza la librería PLY (Python Lex-Yacc) para la generación de los 
-    analizadores léxico y sintáctico.
+    Para ello, se utiliza la librería PLY (Python Lex-Yacc).
 
     Autores: Leonel Guerrero, Ka Fung
     Fecha: 28/10/2022
@@ -91,7 +90,8 @@ def t_TkString(t):
 def t_comment(t):
     r'//.*'
     pass
-
+    
+# Regla para contar el número de líneas
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
@@ -103,9 +103,7 @@ def t_error(t):
     invalid_tokens.append(t.value[0])
     t.lexer.skip(1)
 
-# Compute col# A function that calculates the column of a token.
-#     input is the input text string
-#     token is a token instance
+# Calcula la columna en la que se encuentra el token
 def find_column(input, token):
     line_start = input.rfind('\n', 0, token.lexpos) + 1
     return (token.lexpos - line_start) + 1
@@ -117,12 +115,12 @@ if __name__ == '__main__':
     # Leer el archivo de entrada
     if len(argv) != 2:
         print("Error: Invalid number of arguments")
-        print("Usage: python tokens.py <input_file>")
+        print("Usage: python lexer.py <input_file>")
         exit(1)
     
     if not argv[1].endswith(".gcl"):
         print("Error: Invalid file extension (must be .gcl)")
-        print("Usage: python tokens.py <input_file>")
+        print("Usage: python lexer.py <input_file>")
         exit(1)
 
     global data
