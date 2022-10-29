@@ -72,7 +72,7 @@ t_TkConcat = r'\.'
 
 # Expresiones regulares para dígitos, caracteres... 
 def t_TkId(t):
-    r'[a-zA-Z][a-zA-Z0-9_]*'
+    r'[_a-zA-Z_][a-zA-Z0-9_\.]*'
     t.type = reserved.get(t.value, 'TkId')
     return t
 
@@ -81,8 +81,10 @@ def t_TkNum(t):
     t.value = int(t.value)
     return t
 
+# String que comienza y cierra con comillas dobles. Si se encuentra un \
+# ésta debe ser seguida por un " o un \ o un , o un n, de otra manera error.
 def t_TkString(t):
-    r'".*"'
+    r'\"([^\\\"]|\\\"|\\\\|\\n|\\,)*\"'
     t.value = t.value[1:-1]
     return t
 
