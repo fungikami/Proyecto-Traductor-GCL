@@ -70,9 +70,9 @@ t_TkCBracket = r'\]'
 t_TkTwoPoints = r':'  
 t_TkConcat = r'\.'
 
-# Expresiones regulares para dígitos, caracteres... 
+# Expresiones regulares para dígitos, caracteres... r'[_a-zA-Z_][a-zA-Z0-9_]*'
 def t_TkId(t):
-    r'[_a-zA-Z_][a-zA-Z0-9_]*'
+    r'[a-zA-Z_]\w*'
     t.type = reserved.get(t.value, 'TkId')
     return t
 
