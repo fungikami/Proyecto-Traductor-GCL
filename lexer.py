@@ -84,7 +84,7 @@ def t_TkNum(t):
 # String que comienza y cierra con comillas dobles. Si se encuentra un \
 # ésta debe ser seguida por un " o un \ o un , o un n, de otra manera error.
 def t_TkString(t):
-    r'\"([^\\\n]|\\\"|\\\\|\\n|\\,)*?\"'
+    r'\"([^\\\n]|\\\"|\\\\|\\n)*?\"'
     t.value = t.value[1:-1]
     return t
 
