@@ -82,13 +82,13 @@ def t_TkNum(t):
     return t
 
 # String que comienza y cierra con comillas dobles. Si se encuentra un \
-# ésta debe ser seguida por un " o un \ o un , o un n, de otra manera error.
+# ésta debe ser seguida por un " o un \ o un n, de otra manera error.
 def t_TkString(t):
     r'\"([^\\\n]|\\\"|\\\\|\\n)*?\"'
     t.value = t.value[1:-1]
     return t
 
-# Comentarios de tipo: // Esto es un comentario. Debe ser ignorado.
+# Comentarios de tipo: // 
 def t_comment(t):
     r'//.*'
     pass
@@ -145,7 +145,7 @@ if __name__ == '__main__':
             break
 
         column = find_column(data, tok)
-        if tok.type == 'TkId':
+        if tok.type == 'TkId' or tok.type == 'TkString':
             valid_tokens.append("TkId(\"%s\") %d %d" % (tok.value, tok.lineno, column))
             continue
         if tok.type == 'TkNum':
