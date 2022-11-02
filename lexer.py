@@ -146,8 +146,9 @@ if __name__ == '__main__':
 
         column = find_column(data, tok)
         if tok.type == 'TkId' or tok.type == 'TkString':
-            valid_tokens.append("TkId(\"%s\") %d %d" % (tok.value, tok.lineno, column))
+            valid_tokens.append("%s(\"%s\") %d %d" % (tok.type, tok.value, tok.lineno, column))
             continue
+
         if tok.type == 'TkNum':
             valid_tokens.append("TkNum(%d) %d %d" % (tok.value, tok.lineno, column))
             continue
