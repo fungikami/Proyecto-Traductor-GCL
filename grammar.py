@@ -1,5 +1,8 @@
 """
     Reglas gramaticales para el lenguaje GCL.
+
+    Autores: Leonel Guerrero, Ka Fung
+    Fecha: 18/11/2022
 """
 
 from . import AST
