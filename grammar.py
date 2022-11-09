@@ -23,118 +23,60 @@ precedence = (
 )
 
 # Definicion de la gramatica
-# Bloque
+# Programa es un bloque
+def p_program(p):
+    """program : block"""
+
+# Bloque, puede ir Declaración y Secuenciación (Preguntar si es válido un bloque vacío)
 def p_block(p):
-    'block : TkOBlock TkCBlock'
-    p[0] = AST.Block([])
+    """block : TkOBlock TkCBlock
+             | TkOBlock declaration TkCBlock
+             | TkOBlock declaration sequence TkCBlock
+    """
 
-def p_instr(p):
-    '''instr : block
-             | skip
-             | seq
-             | asig
-             | print
-             | if
-             | while
-             | for
-             | case
-             | call
-             | return'''
-    p[0] = p[1]
+# Declaraciones, puede ir una secuencia de declaraciones
+def p_declarations(p):
+    """declarations : declare seq_declarations
+                    | declare seq_declarations TkSemicolon declarations
+    """
 
-# Skip
-def p_skip(p):
-    'skip : TkSkip'
-    p[0] = AST.Skip()
+# Secuencia de declaraciones, puede ir una secuencia de declaraciones
+def p_seq_declarations(p):
+    """seq_declarations : declaration
+                        | seq_declarations TkSemicolon declaration
+    """
 
-# Secuenciacion
-def p_seq(p):
-    'seq : seq TkSemicolon instr'
-    p[0] = AST.Seq(p[1], p[3])
+# Declaración, como a, b, i : int
+def p_declaration(p):
 
-# Asignacion
-def p_asig(p):
-    'asig : TkId TkAsig exp'
-    p[0] = AST.Asign(p[1], p[3])
+# Asignación, como a := 1 + a
+def p_asignation(p):
+    """asignation : TkId TkAsig expression"""
 
-# Print print "Hola " . "mundo! " . 1 . "\n"
-def p_print(p):
-    'print : TkPrint exp'
-    p[0] = AST.Print(p[2])
+# Expresión, como a + b o a v b
+def p_expression(p):
+    """expression : expression TkPlus expression
+                    | expression TkMinus expression
+                    | expression TkMult expression
+                    | expression TkOr expression
+                    | expression TkAnd expression
+                    | expression TkEqual expression
+                    | expression TkNEqual expression
+                    | expression TkLess expression
+                    | expression TkLeq expression
+                    | expression TkGeq expression
+                    | expression TkGreater expression
+                    | TkOpenPar expression TkClosePar
+                    | TkNot expression
+                    | TkId
+                    | TkNumber
+                    | TkTrue
+                    | TkFalse
+                    | array
+                    | arrayAccess
+        """
 
-# Condicionales
-# if <condición1> --> <instrucción1> [] <condición2> --> <instrucción2> [] <condiciónN> --> <instrucciónN> fi
-def p_if(p):
-    'if : TkIf TkOBlock TkCBlock TkFi'
-    p[0] = AST.If([])
-
-# Iteraciones do <condición> --> <instrucción> od
-def p_while(p):
-    'while : TkDo TkOBlock TkCBlock TkOd'
-    p[0] = AST.While([])
-
-# Iteraciones con multiples guardias
-def p_for(p):
-    'for : TkFor TkOBlock TkCBlock TkRof'
-    p[0] = AST.For([])
-
-# Expresiones
-def p_exp(p):
-    "to-do"
-
-# Expresiones terminales
-def p_exp_term(p):
-    '''expr : TkId
-            | TkNum
-            | TkTrue
-            | TkFalse
-            | TkStr'''
-    p[0] = p[1]
-
-# Expresiones unarias
-def p_exp_unary(p):
-    '''expr : TkNot expr
-            | TkMinus expr'''
-    p[0] = AST.Unary(p[1], p[2])
-
-# Expresiones binarias
-def p_exp_binary(p):
-    '''expr : expr TkPlus expr
-            | expr TkMinus expr
-            | expr TkMult expr
-            | expr TkOr expr
-            | expr TkAnd expr
-            | expr TkEqual expr
-            | expr TkNEqual expr
-            | expr TkLess expr
-            | expr TkLeq expr
-            | expr TkGeq expr
-            | expr TkGreater expr'''
-    p[0] = AST.Binary(p[2], p[1], p[3])
-
-# Expresiones con arreglo
-def p_exp_array(p):
-    'expr : TkId TkOBrack expr TkCBrack'
-    p[0] = AST.Array(p[1], p[3])
-
-# Comparacion de expresiones
-def p_exp_compare(p):
-    '''expr : expr TkEqual expr
-            | expr TkNEqual expr
-            | expr TkLess expr
-            | expr TkLeq expr
-            | expr TkGeq expr
-            | expr TkGreater expr'''
-    p[0] = AST.Compare(p[2], p[1], p[3])
-
-# Expresiones terminales
-def p_exp_term(p):
-    '''expr : TkId
-            | TkNum
-            | TkTrue
-            | TkFalse
-            | TkStr'''
-    p[0] = p[1]
+    
 
 # Error: Sintax error in row 2, column 10: unexpected token ’;’.
 def p_error(p):
@@ -144,5 +86,6 @@ def p_error(p):
         print("Error: Unexpected end of input")
 
 
-    
+def p_for(p):
+    """for : TkFor TkId TkIn expression TkDo block TkEnd"""
 
