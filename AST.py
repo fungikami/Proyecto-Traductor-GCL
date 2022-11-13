@@ -19,7 +19,7 @@ class Declare(AST):
         pass
 
 class Sequencing(AST):
-    def __init(self, instr1, instr2):
+    def __init__(self, instr1, instr2):
         self.instr1 = instr1
         self.instr2 = instr2
 

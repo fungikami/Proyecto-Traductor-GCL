@@ -5,14 +5,15 @@
     Fecha: 18/11/2022
 """
 
-from . import AST
+from AST import AST
+from lexer import tokens
 
 # Reglas de precedencia (Por revisar)
 precedence = (
     ('nonassoc', 'TkAsig'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-    
+
     ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
 
@@ -23,19 +24,19 @@ precedence = (
 
 )
 
-binary = {
-    'TkPlus': AST.Plus,
-    'TkMinus': AST.Minus,
-    'TkMult': AST.Mult,
-    'TkAnd': AST.And,
-    'TkOr': AST.Or,
-    'TkEqual': AST.Equal,
-    'TkNEqual': AST.NEqual,
-    'TkLess': AST.Less,
-    'TkLeq': AST.Leq,
-    'TkGreater': AST.Greater,
-    'TkGeq': AST.Geq,
-}
+# binary = {
+#     'TkPlus': AST.Plus,
+#     'TkMinus': AST.Minus,
+#     'TkMult': AST.Mult,
+#     'TkAnd': AST.And,
+#     'TkOr': AST.Or,
+#     'TkEqual': AST.Equal,
+#     'TkNEqual': AST.NEqual,
+#     'TkLess': AST.Less,
+#     'TkLeq': AST.Leq,
+#     'TkGreater': AST.Greater,
+#     'TkGeq': AST.Geq,
+# }
 
 # Definicion de la gramatica
 # Programa es un bloque
@@ -52,14 +53,16 @@ def p_block(p):
 # Declaraciones
 # <declarations> -> declare <sec_declarations>
 #                | λ
+
+
 def p_declarations(p):
-    """declarations : declare seq_declarations
+    """declarations : TkDeclare seq_declarations
         | lambda"""
     p[0] = AST.Declare(p[2] if len(p) == 3 else p[1])
-    
+
 
 # Secuencia de declaraciones
-# <sec_declarations>  -> <declaration>; <sec_declarations> 
+# <sec_declarations>  -> <declaration>; <sec_declarations>
 #                      | <declaration>
 def p_seq_declarations(p):
     """seq_declarations : declaration TkSemicolon seq_declarations
@@ -72,7 +75,7 @@ def p_seq_declarations(p):
 # Declaración
 # <declaration> -> <idLists> : <type>
 def p_declaration(p):
-    """declaration : idLists TkColon type"""
+    """declaration : idLists TkSemicolon type"""
     p[0] = AST.Declaration(p[1], p[3])
 
 # Lista de identificadores
@@ -84,7 +87,7 @@ def p_idLists(p):
     p[0] = AST.List(p[1], p[2])
 
 # Instrucciones
-# <instructions> -> <instruction>; <instructions> 
+# <instructions> -> <instruction>; <instructions>
 #   | <instruction>
 def p_instructions(p):
     """instructions : instruction TkSemicolon instructions
@@ -102,7 +105,7 @@ def p_instructions(p):
 #   |  <forLoop>
 #   |  <doLoop>
 def p_instruction(p):
-    """instruction : skip
+    """instruction : TkSkip
         | assignment
         | print_instruction
         | conditional
@@ -149,17 +152,16 @@ def p_binary_expression(p):
         | expression TkEqual expression
         | expression TkNEqual expression"""
     p[0] = binary[p[2]](p[1], p[3])
-        
 def p_unary_expression(p):
     """expression : TkMinus expression %prec UNARY
         | TkNot expression %prec UNARY"""
     if p[1] == '-':
-        p[0]= AST.Minus(p[2])
+        p[0] = AST.Minus(p[2])
     else:
         p[0] = AST.Neg(p[2])
 
 def p_terminal_expression(p):
-    """expression : TkOParen expression TkCParen
+    """expression : TkOpenPar expression TkClosePar
         | int_array
         | int_array_access
         | number
@@ -194,7 +196,7 @@ def p_print_instruction(p):
 # <concatenation> -> <string_expression> . <concatenation>
 #   | <string_expression> 
 def p_concatenation(p):
-    """concatenation : string_expression TkDot concatenation
+    """concatenation : string_expression TkConcat concatenation
         | string_expression"""
 
 # Expresión de cadena
@@ -216,11 +218,11 @@ def p_guards(p):
         | guard guards
         | lambda"""
 
-# Guardia 
-# <guard> -> [] <expression> --> <execute> 
+# Guardia
+# <guard> -> [] <expression> --> <execute>
 #   | λ
 def p_guard(p):
-    """guard : Tt_TkGuard expression TkArrow execute
+    """guard : TkGuard expression TkArrow execute
         | lambda"""
 
 # Ejecución
@@ -248,7 +250,7 @@ def p_do(p):
 def p_type(p):
     """type : TkInt
         | TkBool
-        | TkArray TkOBracket number TkDotDot number TkCBracket"""
+        | TkArray TkOBracket number TkTwoPoints number TkCBracket"""
 
 # Identificadores
 # <id>    -> [a-zA-Z_][a-zA-Z_]*
@@ -258,7 +260,7 @@ def p_id(p):
 # Números
 # <number>    -> [0-9]+
 def p_number(p):
-    """number : TkNumber"""
+    """number : TkNum"""
 
 # Booleanos
 # <boolean>   -> true
@@ -274,12 +276,12 @@ def p_string(p):
 
 def p_lambda(p):
     """lambda :"""
-    
-    
+
+
 # Error: Sintax error in row 2, column 10: unexpected token ’;’.
 def p_error(p):
     if p:
-        print("Error: Sintax error in row %d, column %d: unexpected token '%s'." % (p.lineno, p.lexpos, p.value))
+        print("Error: Sintax error in row %d, column %d: unexpected token '%s'." % (
+            p.lineno, p.lexpos, p.value))
     else:
         print("Error: Unexpected end of input")
-

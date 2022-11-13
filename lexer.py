@@ -34,7 +34,8 @@ tokens = [
     'TkOBlock', 'TkCBlock', 'TkSoForth', 'TkComma', 'TkOpenPar', 'TkClosePar',
     'TkAsig', 'TkSemicolon', 'TkArrow', 'TkGuard', 'TkPlus', 'TkMinus', 'TkMult', 
     'TkOr', 'TkAnd', 'TkNot', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater', 'TkEqual', 
-    'TkNEqual', 'TkOBracket', 'TkCBracket', 'TkTwoPoints', 'TkConcat',
+    'TkNEqual', 'TkOBracket', 'TkCBracket', 'TkTwoPoints', 'TkConcat', 'TkId',
+    'TkNum', 'TkString'
 ]
 
 tokens += list(reserved.values())
