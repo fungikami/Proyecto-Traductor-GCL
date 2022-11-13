@@ -194,9 +194,11 @@ def p_int_array_access(p):
     # p[0] = AST.ArrayAccess(p[1], p[3])
 
 # Arreglo de enteros
-# <int_array> -> [ <int_array_elements> ]
+# <int_array> -> <number>, <int_array>
+#   | <number>
 def p_int_array(p):
-    """int_array : TkOBracket int_array_elements TkCBracket"""
+    """int_array : number TkComma int_array
+                 | number"""
     p[0] = AST("IntArray", p[2], [p[1], p[3]])
     # p[0] = AST.Array(p[2])
 
@@ -311,7 +313,7 @@ def p_do(p):
 def p_type(p):
     """type : TkInt
             | TkBool
-            | TkArray TkOBracket number TkTwoPoints number TkCBracket"""
+            | TkArray TkOBracket number TkSoForth number TkCBracket"""
     if len(p) == 2:
         p[0] = AST("Type", p[1])
         # p[0] = p[1]
