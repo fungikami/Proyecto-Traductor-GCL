@@ -75,7 +75,7 @@ def p_seq_declarations(p):
 # Declaración
 # <declaration> -> <idLists> : <type>
 def p_declaration(p):
-    """declaration : idLists TkSemicolon type"""
+    """declaration : idLists TkTwoPoints type"""
     p[0] = AST.Declaration(p[1], p[3])
 
 # Lista de identificadores
@@ -152,6 +152,7 @@ def p_binary_expression(p):
         | expression TkEqual expression
         | expression TkNEqual expression"""
     p[0] = binary[p[2]](p[1], p[3])
+
 def p_unary_expression(p):
     """expression : TkMinus expression %prec UNARY
         | TkNot expression %prec UNARY"""
@@ -176,15 +177,10 @@ def p_int_array_access(p):
     """int_array_access : id TkOBracket expression TkCBracket"""
 
 # Arreglo de enteros
-# <int_array> -> [ <int_array_elements> ]
-def p_int_array(p):
-    """int_array : TkOBracket int_array_elements TkCBracket"""
-
-# Elementos de un arreglo de enteros
-# <int_array_elements> -> <number>, <int_array_elements>
+# <int_array> -> <number>, <int_array>
 #   | <number>
-def p_int_array_elements(p):
-    """int_array_elements : number TkComma int_array_elements
+def p_int_array(p):
+    """int_array : number TkComma int_array
         | number"""
 
 # Salida
@@ -250,7 +246,7 @@ def p_do(p):
 def p_type(p):
     """type : TkInt
         | TkBool
-        | TkArray TkOBracket number TkTwoPoints number TkCBracket"""
+        | TkArray TkOBracket number TkSoForth number TkCBracket"""
 
 # Identificadores
 # <id>    -> [a-zA-Z_][a-zA-Z_]*
