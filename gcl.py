@@ -1,9 +1,10 @@
-import ply.yacc as yacc
+from ply import lex, yacc
 from grammar import *
 from lexer import *
 from sys import argv
 
 if __name__ == '__main__':
+    lexer = lex()
     parser = yacc.yacc()
 
     # Leer el archivo de entrada
@@ -28,5 +29,5 @@ if __name__ == '__main__':
             break
         if not s:
             continue
-        result = parser.parse(s)
+        result = parser.parse(s, lexer=lexer, debug=True)
         print(result)
