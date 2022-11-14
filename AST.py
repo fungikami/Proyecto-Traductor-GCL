@@ -17,22 +17,22 @@ class AST:
     def __str__(self) -> str:
         if isinstance(self.children, AST):
             if self.leaf:
-                return f"AST:= {self.type}({self.leaf}, {self.children})"
+                return f"AST:= {self.type}(`{self.leaf}`, {self.children})"
             else:
                 return f"AST:= {self.type}({self.children})"
-
-        if self.children and self.leaf:
-            if len(self.children) == 2:
-                return f"(AST:= {self.type} R:{self.children[0]} L:{self.children[1]} {self.leaf})"
-            else:
-                return f"(AST:= {self.type} R:{self.children[0]} L:None {self.leaf})"
-        elif self.children:
-            if len(self.children) == 2:
-                return f"(AST:= {self.type} R:{self.children[0]} L:{self.children[1]} NoLeaf)"
-            else:
-                return f"(AST:= {self.type} R:{self.children[0]} L:None NoLeaf)"
+        if isinstance(self.children, list):
+            if self.children and self.leaf:
+                if len(self.children) == 2:
+                    return f"(AST:= {self.type} L:{self.children[0]} R:{self.children[1]} `{self.leaf}`)"
+                else:
+                    return f"(AST:= {self.type} L:{self.children[0]} R:None `{self.leaf}`)"
+            elif self.children:
+                if len(self.children) == 2:
+                    return f"(AST:= {self.type} L:{self.children[0]} R:{self.children[1]} NoLeaf)"
+                else:
+                    return f"(AST:= {self.type} L:{self.children[0]} R:None NoLeaf)"
         elif self.leaf:
-            return f"(AST:= {self.type} NoChildren {self.leaf})"
+            return f"(AST:= {self.type} NoChildren `{self.leaf}`)"
         else:
             return f"(AST:= {self.type} NoChildren NoLeaf)"
 

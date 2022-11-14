@@ -1,5 +1,5 @@
 from ply import lex, yacc
-from grammar import *
+from grammar2 import *
 from lexer import *
 from sys import argv
 
@@ -22,12 +22,5 @@ if __name__ == '__main__':
     data = f.read()
     f.close()
 
-    while True:
-        try:
-            s = data
-        except EOFError:
-            break
-        if not s:
-            continue
-        result = parser.parse(s, lexer=lexer, debug=True)
-        print(result)
+    result = parser.parse(data, lexer=lexer, debug=True)
+    print(result)
