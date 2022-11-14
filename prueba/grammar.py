@@ -180,7 +180,7 @@ def p_terminal_expression(p):
 # <int_array_access> -> <id>[<expression>]
 def p_int_array_access(p):
     """int_array_access : id TkOBracket expression TkCBracket"""
-    p[0] = ReadAccess(p[1], p[3])
+    p[0] = ReadArray(p[1], p[3])
 
 # Arreglo de enteros
 # <int_array> -> <number>, <int_array>
