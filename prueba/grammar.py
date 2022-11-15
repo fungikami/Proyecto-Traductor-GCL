@@ -20,10 +20,8 @@ precedence = (
     ('nonassoc', 'TkAsig'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-
     ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
-
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
     ('nonassoc', 'UNARY'),
@@ -50,7 +48,7 @@ def p_declarations(p):
     p[0] = Declare(p[2] if len(p) == 3 else p[1])
 
 # Secuencia de declaraciones
-# <sec_declarations>  -> <declaration>; <sec_declarations>
+# <sec_declarations>  -> <sec_declarations>, <declaration>;
 #                      | <declaration>
 def p_seq_declarations(p):
     """seq_declarations : declaration TkSemicolon seq_declarations
@@ -149,8 +147,7 @@ def p_binary_expression(p):
     p[0] = binary[p[2]](p[1], p[3])
 
 # --------------------- UNARY OPERATORS ---------------------
-# <expression>    -> (<expression>)
-#                  | -<expression>
+# <expression>    -> -<expression>
 #                  | !<expression>
 def p_unary_expression(p):
     """expression : TkMinus expression %prec UNARY
@@ -205,7 +202,7 @@ def p_array_access(p):
     p[0] = ReadArray(p[1], p[3])
 
 # Modificación de un elemento de un arreglo
-# <array_modify> -> <id><expression>
+# <array_modify> -> <expression>(<expression>:<expression>)
 def p_array_modify(p):
     """array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
     p[0] = WriteArray(p[1], TwoPoints(p[3], p[5]))
@@ -226,12 +223,6 @@ def p_concatenation(p):
     else:
         p[0] = p[1]
 
-# Expresión de cadena
-# <string_expression>  -> <expresion> 
-# def p_string_expression(p):
-#     """string_expression : expression"""
-#     p[0] = String(p[1])
-
 # --------------------- CONDICIONAL ---------------------
 # <conditional>   -> if <guards> fi
 def p_conditional(p):
@@ -239,8 +230,8 @@ def p_conditional(p):
     p[0] = If(p[2])
 
 # Guardias
-# <guards> -> <guard> 
-#           | <guard> [] <guards>
+# <guards> -> <guards> [] <guard>
+#           | <guard> 
 def p_guards(p):
     """guards : guards TkGuard guard
                 | guard"""

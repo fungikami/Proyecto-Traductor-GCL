@@ -8,7 +8,7 @@ Programa:
         <declarations> -> declare <sec_declarations>
                         | λ
 
-        <sec_declarations>  -> <declaration>; <sec_declarations> 
+        <sec_declarations>  -> <sec_declarations>, <declaration>;
                             | <declaration>
 
         <declaration> -> <idLists> : <type>
@@ -17,7 +17,7 @@ Programa:
                     | <id>
 
 - Instrucciones
-<instructions> -> <instruction>; <instructions> 
+<instructions> -> <instructions>, <instruction>;
                 | <instruction>
 
 <instruction>  -> skip
@@ -29,51 +29,47 @@ Programa:
 
     - Asignación:
     <assignment> -> <id> := <expression>
+                  | <id> := <array_expr>
 
-    <expression>    -> (<expression>)
-                    | <expression> + <expression>
+    <expression>    -> <expression> + <expression>
                     | <expression> - <expression>
                     | <expression> * <expression>
-                    | -<expression>
                     | <expression> \/ <expression>
                     | <expression> /\ <expression>
-                    | !<expression>
                     | <expression> < <expression>
                     | <expression> <= <expression>
                     | <expression> >= <expression>
                     | <expression> > <expression>
                     | <expression> == <expression>
                     | <expression> != <expression>
-                    | <int_array>
-                    | <int_array_access>
+                    | -<expression>
+                    | !<expression>
+                    | (<expression>)
+                    | <array_access>
+                    | <array_modify>
                     | <number>
                     | <boolean>
                     | <id>
 
-    <int_array_access> -> id[<expression>]
+    <array> -> <number>, <array>
+            | <number>
 
-    <int_array> -> <intList> 
-
-    <int_array_elements> -> <number>, <int_array_elements>
-                        | <number>
+    <array_access> -> id[<expression>]
 
     - Salida
     <print_instruction> -> print <concatenation>
 
-    <concatenation> -> <string_expression> . <concatenation>
-                    | <string_expression> 
-
-    <string_expression>  -> <expresion> | <string>
+    <concatenation> -> <concatenation> . <expression>
+                    | <expression> 
 
     - Condicionales y guardias
-    <conditional>   -> if <expression> --> <execute> 
-                        <guards>
-                       fi
+    <conditional> -> if <guards> fi
     
-    <guards> -> <guard> | <guard> <guards>
-    <guard> -> [] <expression> --> <execute>
-            | λ
+    <guards>    -> <guards> [] <guard>
+                | <guard> 
 
+    <guard> -> <expression> --> <execute>
+    
     <execute>   -> <instructions>
                 | <block>
 
