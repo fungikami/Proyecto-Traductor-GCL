@@ -310,10 +310,14 @@ def p_lambda(p):
     """lambda :"""
     pass
 
+def find_column(input, token):
+    line_start = input.rfind('\n', 0, token.lexpos) + 1
+    return (token.lexpos - line_start) + 1
+
 # Error: Sintax error in row 2, column 10: unexpected token ’;’.
 def p_error(p):
     if p:
         print("Error: Sintax error in row %d, column %d: unexpected token '%s'." % (
-            p.lineno, p.lexpos + 1, p.value))
+            p.lineno, find_column(p.lexer.lexdata, p), p.value))
     else:
         print("Error: Unexpected end of input")

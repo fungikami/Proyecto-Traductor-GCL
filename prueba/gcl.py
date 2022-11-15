@@ -23,4 +23,6 @@ if __name__ == '__main__':
     f.close()
 
     result = parser.parse(data, lexer=lexer)
-    print(result.imprimir(0))
+
+    if result:
+        print(result.imprimir(0))
