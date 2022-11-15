@@ -22,5 +22,5 @@ if __name__ == '__main__':
     data = f.read()
     f.close()
 
-    result = parser.parse(data, lexer=lexer, debug=True)
+    result = parser.parse(data, lexer=lexer)
     result.imprimir(1)

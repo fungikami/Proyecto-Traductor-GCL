@@ -73,13 +73,17 @@ def p_declaration(p):
 def p_idLists(p):
     """idLists : id TkComma idLists
                | id"""
-    p[0] = IdLists(p[1], p[3] if len(p) == 4 else p[1])
+
+    if len(p) == 4:
+        p[0] = IdLists(p[1], p[3])
+    else:
+        p[0] = p[1]
 
 # Instrucciones
-# <instructions> -> <instruction>; <instructions>
+# <instructions> -> <instructions>, <instruction>;
 #                 | <instruction>
 def p_instructions(p):
-    """instructions : instruction TkSemicolon instructions
+    """instructions : instructions TkSemicolon instruction 
                     | instruction"""
     if len(p) == 4:
         p[0] = Sequencing(p[1], p[3])
@@ -100,13 +104,14 @@ def p_instruction(p):
                    | conditional
                    | for
                    | do"""
-    p[0] = p[1]
-
+    p[0] = Skip() if p[1] == 'skip' else p[1]
 
 # Asignación
 # <assignment> -> <id> := <expression>
+#               | <id> := <array_expr>
 def p_assignment(p):
-    """assignment : id TkAsig expression"""
+    """assignment : id TkAsig expression
+                  | id TkAsig array_expr"""
     p[0] = Asig(p[1], p[3])
 
 binary = {
@@ -122,26 +127,19 @@ binary = {
     '>': Greater,
     '>=': Geq,
 }
-# Expresión
-# <expression>    -> (<expression>)
-#                  | <expression> + <expression>
+
+# Expresiones binarias
+#                 -> <expression> + <expression>
 #                  | <expression> - <expression>
 #                  | <expression> * <expression>
-#                  | -<expression>
 #                  | <expression> \/ <expression>
 #                  | <expression> /\ <expression>
-#                  | !<expression>
 #                  | <expression> < <expression>
 #                  | <expression> <= <expression>
 #                  | <expression> >= <expression>
 #                  | <expression> > <expression>
 #                  | <expression> == <expression>
 #                  | <expression> != <expression>
-#                  | <int_array>
-#                  | <int_array_access>
-#                  | <number>
-#                  | <boolean>
-#                  | <id>
 def p_binary_expression(p):
     """expression : expression TkPlus expression
                   | expression TkMinus expression
@@ -156,23 +154,51 @@ def p_binary_expression(p):
                   | expression TkNEqual expression"""
     p[0] = binary[p[2]](p[1], p[3])
 
+# Expresiones unarias
+# <expression>    -> (<expression>)
+#                  | -<expression>
+#                  | !<expression>
 def p_unary_expression(p):
     """expression : TkMinus expression %prec UNARY
                   | TkNot expression %prec UNARY"""
     if p[1] == '-':
-        p[0]= Minus(p[2])
+        p[0]= UnaryMinus(p[2])
     else:
         p[0] = Neg(p[2])
 
+# Expresiones terminales
+# <expression>    -> (<expression>)
+#                  | <int_array_access>
+#                  | <int_array_modify>
+#                  | <number>
+#                  | <boolean>
+#                  | <id>
 def p_terminal_expression(p):
     """expression : TkOpenPar expression TkClosePar
-                  | int_array
                   | int_array_access
+                  | int_array_modify
                   | number
                   | boolean
                   | id"""
     if len(p) == 4:
         p[0] = p[2]
+    else:
+        p[0] = p[1]
+
+# Expresiones de arreglos
+# <array_expr> -> <int_array>
+def p_array_expr(p):
+    """array_expr : int_array"""
+    p[0] = p[1]
+
+# Arreglo de enteros
+# <int_array> -> <number>, <int_array>
+#               | <number>
+def p_int_array(p):
+    """int_array : expression TkComma int_array
+                 | expression"""
+    if len(p) == 4:
+        p[0] = Comma(p[1], p[3])
     else:
         p[0] = p[1]
 
@@ -182,16 +208,11 @@ def p_int_array_access(p):
     """int_array_access : id TkOBracket expression TkCBracket"""
     p[0] = ReadArray(p[1], p[3])
 
-# Arreglo de enteros
-# <int_array> -> <number>, <int_array>
-#   | <number>
-def p_int_array(p):
-    """int_array : number TkComma int_array
-                 | number"""
-    if len(p) == 4:
-        p[0] = WriteArray(p[1], p[3])
-    else:
-        p[0] = p[1]
+# Modificación de un elemento de un arreglo
+# <int_array_modify> -> <id><expression>
+def p_int_array_modify(p):
+    """int_array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
+    p[0] = WriteArray(p[1], TwoPoints(p[3], p[5]))
 
 # Salida
 # <print_instruction> -> print <concatenation>
@@ -205,7 +226,10 @@ def p_print_instruction(p):
 def p_concatenation(p):
     """concatenation : string_expression TkConcat concatenation
                      | string_expression"""
-    p[0] = Concatenation(p[1], p[3] if len(p) == 4 else p[1])
+    if len(p) == 4:
+        p[0] = Concat(p[1], p[3])
+    else:
+        p[0] = p[1]
 
 # Expresión de cadena
 # <string_expression>  -> <expresion> 
@@ -219,21 +243,24 @@ def p_string_expression(p):
 # <conditional>   -> if <guards> fi
 def p_conditional(p):
     """conditional : TkIf guards TkFi"""
-    p[0] = Conditional(p[2])
+    p[0] = If(p[2])
 
 # Guardias
 # <guards> -> <guard> 
 #           | <guard> [] <guards>
 def p_guards(p):
-    """guards : guard TkGuard guards
+    """guards : guards TkGuard guard
                 | guard"""
-    p[0] = Guards(p[1], p[3] if len(p) == 4 else p[1])    
+    if len(p) == 4:
+        p[0] = Guard(p[1], p[3])
+    else:
+        p[0] = p[1]
 
 # Guardia
 # <guard> -> <expression> --> <execute>
 def p_guard(p):
     """guard : expression TkArrow execute """
-    p[0] = Guard(p[1], p[3])
+    p[0] = Then(p[1], p[3])
 
 # Ejecución
 # <execute>   -> <instructions>
@@ -247,13 +274,13 @@ def p_execute(p):
 # <forLoop> -> for <id> in <expression> to <expression> --> <execute> rof
 def p_for(p):
     """for : TkFor id TkIn expression TkTo expression TkArrow execute TkRof"""
-    p[0] = For(p[2], p[4], p[6], p[8])
+    p[0] = For(In(p[2], To(p[4], p[6])), p[8])
 
 # Ciclos do
 # <doLoop> -> do <expression> --> <execute> od
 def p_do(p):
     """do : TkDo expression TkArrow execute TkOd"""
-    p[0] = Do(p[2], p[4])
+    p[0] = Do(Then(p[2], p[4]))
 
 # Terminales
 # Tipos
