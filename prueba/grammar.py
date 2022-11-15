@@ -30,19 +30,18 @@ precedence = (
     ('right', 'TkNot'),
 )
 
-# Definicion de la gramatica
-# Programa es un bloque
+# --------------------- PROGRAM ---------------------
 def p_program(p):
     """program : block"""
     p[0] = p[1]
 
-# Bloque (Preguntar si es válido un bloque vacío)
+# --------------------- BLOCK ---------------------
 # <block> -> |[ <declarations> <instructions> ]|
 def p_block(p):
     """block : TkOBlock declarations instructions TkCBlock"""
     p[0] = Block(p[2], p[3])
 
-# Declaraciones
+# --------------------- DECLARE ---------------------
 # <declarations> -> declare <sec_declarations>
 #                | λ
 def p_declarations(p):
@@ -79,7 +78,7 @@ def p_idLists(p):
     else:
         p[0] = p[1]
 
-# Instrucciones
+# --------------------- INSTRUCTIONS ---------------------
 # <instructions> -> <instructions>, <instruction>;
 #                 | <instruction>
 def p_instructions(p):
@@ -106,7 +105,7 @@ def p_instruction(p):
                    | do"""
     p[0] = Skip() if p[1] == 'skip' else p[1]
 
-# Asignación
+# --------------------- ASSIGNMENT ---------------------
 # <assignment> -> <id> := <expression>
 #               | <id> := <array_expr>
 def p_assignment(p):
@@ -114,32 +113,27 @@ def p_assignment(p):
                   | id TkAsig array_expr"""
     p[0] = Asig(p[1], p[3])
 
+# --------------------- BINARY OPERATORS ---------------------
+# <expression> -> <expression> + <expression>
+#               | <expression> - <expression>
+#               | <expression> * <expression>
+#               | <expression> \/ <expression>
+#               | <expression> /\ <expression>
+#               | <expression> < <expression>
+#               | <expression> <= <expression>
+#               | <expression> >= <expression>
+#               | <expression> > <expression>
+#               | <expression> == <expression>
+#               | <expression> != <expression>
+
 binary = {
-    '+': Plus,
-    '-': Minus,
-    '*': Mult,
-    '/\\': And,
-    '\/': Or,
-    '==': Equal,
-    '!=': NEqual,
-    '<': Less,
-    '<=': Leq,
-    '>': Greater,
-    '>=': Geq,
+    '+': Plus, '-': Minus, '*': Mult,
+    '/\\': And, '\/': Or,
+    '==': Equal, '!=': NEqual,
+    '<': Less, '<=': Leq,
+    '>': Greater, '>=': Geq,
 }
 
-# Expresiones binarias
-#                 -> <expression> + <expression>
-#                  | <expression> - <expression>
-#                  | <expression> * <expression>
-#                  | <expression> \/ <expression>
-#                  | <expression> /\ <expression>
-#                  | <expression> < <expression>
-#                  | <expression> <= <expression>
-#                  | <expression> >= <expression>
-#                  | <expression> > <expression>
-#                  | <expression> == <expression>
-#                  | <expression> != <expression>
 def p_binary_expression(p):
     """expression : expression TkPlus expression
                   | expression TkMinus expression
@@ -154,7 +148,7 @@ def p_binary_expression(p):
                   | expression TkNEqual expression"""
     p[0] = binary[p[2]](p[1], p[3])
 
-# Expresiones unarias
+# --------------------- UNARY OPERATORS ---------------------
 # <expression>    -> (<expression>)
 #                  | -<expression>
 #                  | !<expression>
@@ -166,66 +160,67 @@ def p_unary_expression(p):
     else:
         p[0] = Neg(p[2])
 
-# Expresiones terminales
+# --------------------- TERMINAL EXPRESSIONS ---------------------
 # <expression>    -> (<expression>)
-#                  | <int_array_access>
-#                  | <int_array_modify>
+#                  | <array_access>
+#                  | <array_modify>
 #                  | <number>
 #                  | <boolean>
 #                  | <id>
 def p_terminal_expression(p):
     """expression : TkOpenPar expression TkClosePar
-                  | int_array_access
-                  | int_array_modify
+                  | array_access
+                  | array_modify
                   | number
                   | boolean
-                  | id"""
+                  | id
+                  | string """
     if len(p) == 4:
         p[0] = p[2]
     else:
         p[0] = p[1]
 
-# Expresiones de arreglos
-# <array_expr> -> <int_array>
+# --------------------- ARREGLOS ---------------------
+# Expressiones de arreglos (agregado para bifurcar un reduce/reduce conflict)
+# <array_expr> -> <array>
 def p_array_expr(p):
-    """array_expr : int_array"""
+    """array_expr : array"""
     p[0] = p[1]
 
 # Arreglo de enteros
-# <int_array> -> <number>, <int_array>
-#               | <number>
-def p_int_array(p):
-    """int_array : expression TkComma int_array
-                 | expression"""
+# <array> -> <array>, <number>
+#           | <number>
+def p_array(p):
+    """array : array TkComma expression
+            | expression"""
     if len(p) == 4:
         p[0] = Comma(p[1], p[3])
     else:
         p[0] = p[1]
 
 # Acceso a un elemento de un arreglo
-# <int_array_access> -> <id>[<expression>]
-def p_int_array_access(p):
-    """int_array_access : id TkOBracket expression TkCBracket"""
+# <array_access> -> <id>[<expression>]
+def p_array_access(p):
+    """array_access : id TkOBracket expression TkCBracket"""
     p[0] = ReadArray(p[1], p[3])
 
 # Modificación de un elemento de un arreglo
-# <int_array_modify> -> <id><expression>
-def p_int_array_modify(p):
-    """int_array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
+# <array_modify> -> <id><expression>
+def p_array_modify(p):
+    """array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
     p[0] = WriteArray(p[1], TwoPoints(p[3], p[5]))
 
-# Salida
+# --------------------- PRINT ---------------------
 # <print_instruction> -> print <concatenation>
 def p_print_instruction(p):
     """print_instruction : TkPrint concatenation"""
     p[0] = Print(p[2])
 
-# Concatenación
-# <concatenation> -> <string_expression> . <concatenation>
-#                  | <string_expression> 
+# <concatenation> -> <concatenation> . <expression>
+#                  | <expression> 
 def p_concatenation(p):
-    """concatenation : string_expression TkConcat concatenation
-                     | string_expression"""
+    """concatenation : concatenation TkConcat expression
+                     | expression"""
     if len(p) == 4:
         p[0] = Concat(p[1], p[3])
     else:
@@ -233,13 +228,11 @@ def p_concatenation(p):
 
 # Expresión de cadena
 # <string_expression>  -> <expresion> 
-#                       | <string>
-def p_string_expression(p):
-    """string_expression : expression
-                         | string"""
-    p[0] = p[1]
+# def p_string_expression(p):
+#     """string_expression : expression"""
+#     p[0] = String(p[1])
 
-# Condicionales
+# --------------------- CONDICIONAL ---------------------
 # <conditional>   -> if <guards> fi
 def p_conditional(p):
     """conditional : TkIf guards TkFi"""
@@ -270,20 +263,19 @@ def p_execute(p):
                | block"""
     p[0] = p[1]
 
-# Ciclos for
+# --------------------- FOR LOOP ---------------------
 # <forLoop> -> for <id> in <expression> to <expression> --> <execute> rof
 def p_for(p):
     """for : TkFor id TkIn expression TkTo expression TkArrow execute TkRof"""
     p[0] = For(In(p[2], To(p[4], p[6])), p[8])
 
-# Ciclos do
+# --------------------- DO LOOP ---------------------
 # <doLoop> -> do <expression> --> <execute> od
 def p_do(p):
     """do : TkDo expression TkArrow execute TkOd"""
     p[0] = Do(Then(p[2], p[4]))
 
-# Terminales
-# Tipos
+# --------------------- TYPES ---------------------
 # <type>  -> int
 #          | bool
 #          | array[<number> .. <number>]
@@ -296,6 +288,7 @@ def p_type(p):
     else:
         p[0] = ArrayType(p[3], p[5])
 
+# --------------------- TERMINALS ---------------------
 # Identificadores
 # <id>    -> [a-zA-Z_][a-zA-Z_]*
 def p_id(p):
