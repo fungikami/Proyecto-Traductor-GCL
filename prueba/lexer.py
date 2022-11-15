@@ -101,8 +101,8 @@ def t_newline(t):
 
 # Errores: frases incorrectas o mal formadas
 def t_error(t):
-    # column = find_column(data, t)
-    print("Error: Unexpected character \"%s\" in row %d, column %d" % (t.value[0], t.lineno, t.lexpos + 1))
+    column = find_column(t.lexer.lexdata, t)
+    print("Error: Unexpected character \"%s\" in row %d, column %d" % (t.value[0], t.lineno, column))
     # invalid_tokens.append(t.value[0])
     t.lexer.skip(1)
 
