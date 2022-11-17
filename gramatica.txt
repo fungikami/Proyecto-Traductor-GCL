@@ -29,7 +29,6 @@ Programa:
 
     - Asignación:
     <assignment> -> <id> := <expression>
-                  | <id> := <array_expr>
 
     <expression>    -> <expression> + <expression>
                     | <expression> - <expression>
@@ -42,6 +41,7 @@ Programa:
                     | <expression> > <expression>
                     | <expression> == <expression>
                     | <expression> != <expression>
+                    | <expression> , <expression>
                     | -<expression>
                     | !<expression>
                     | (<expression>)
@@ -51,10 +51,9 @@ Programa:
                     | <boolean>
                     | <id>
 
-    <array> -> <number>, <array>
-            | <number>
-
     <array_access> -> id[<expression>]
+
+    <array_modify> -> <expression>(<expression>:<expression>)
 
     - Salida
     <print_instruction> -> print <concatenation>

@@ -106,10 +106,8 @@ def p_instruction(p):
 
 # --------------------- ASSIGNMENT ---------------------
 # <assignment> -> <id> := <expression>
-#               | <id> := <array_expr>
 def p_assignment(p):
     """assignment : id TkAsig expression"""
-                #   | id TkAsig array_expr"""
     p[0] = Asig(p[1], p[3])
 
 # --------------------- BINARY OPERATORS ---------------------
@@ -124,7 +122,7 @@ def p_assignment(p):
 #               | <expression> > <expression>
 #               | <expression> == <expression>
 #               | <expression> != <expression>
-
+#               | <expression> , <expression>
 binary = {
     '+': Plus, '-': Minus, '*': Mult,
     '/\\': And, '\/': Or,
@@ -181,23 +179,6 @@ def p_terminal_expression(p):
         p[0] = p[1]
 
 # --------------------- ARREGLOS ---------------------
-# Expressiones de arreglos (agregado para bifurcar un reduce/reduce conflict)
-# <array_expr> -> <array>
-# def p_array_expr(p):
-#     """array_expr : array"""
-#     p[0] = p[1]
-
-# Arreglo de enteros
-# <array> -> <array>, <number>
-#           | <number>
-# def p_array(p):
-#     """array : array TkComma expression
-#             | expression"""
-#     if len(p) == 4:
-#         p[0] = Comma(p[1], p[3])
-#     else:
-#         p[0] = p[1]
-
 # Acceso a un elemento de un arreglo
 # <array_access> -> <id>[<expression>]
 def p_array_access(p):
