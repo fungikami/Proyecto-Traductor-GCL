@@ -1,7 +1,8 @@
 from ply import lex, yacc
-from grammar2 import *
+from sys import argv, path
+path.append('src')
+from grammar import *
 from lexer import *
-from sys import argv
 
 if __name__ == '__main__':
     lexer = lex()
@@ -22,5 +23,7 @@ if __name__ == '__main__':
     data = f.read()
     f.close()
 
-    result = parser.parse(data, lexer=lexer, debug=True)
-    print(result)
+    result = parser.parse(data, lexer=lexer)
+
+    if result:
+        print(result.imprimir(0))
