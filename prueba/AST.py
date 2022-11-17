@@ -15,7 +15,10 @@ class Block(AST):
         self.instrs = instrs
 
     def imprimir(self, level):
-        return f'{"-" * level}Block\n{self.decls.imprimir(level + 1)}\n{self.instrs.imprimir(level + 1)}'
+        if (self.decls.seq_decls):
+            return f'{"-" * level}Block\n{self.decls.imprimir(level + 1)}\n{self.instrs.imprimir(level + 1)}'
+        else:
+            return f'{"-" * level}Block\n{self.instrs.imprimir(level + 1)}'
 
 # ------------------ DECLARATIONS ------------------
 class Declare(AST):

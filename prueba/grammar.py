@@ -24,6 +24,7 @@ precedence = (
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
+    ('left', 'TkComma'),
     ('nonassoc', 'UNARY'),
     ('right', 'TkNot'),
 )
@@ -107,8 +108,8 @@ def p_instruction(p):
 # <assignment> -> <id> := <expression>
 #               | <id> := <array_expr>
 def p_assignment(p):
-    """assignment : id TkAsig expression
-                  | id TkAsig array_expr"""
+    """assignment : id TkAsig expression"""
+                #   | id TkAsig array_expr"""
     p[0] = Asig(p[1], p[3])
 
 # --------------------- BINARY OPERATORS ---------------------
@@ -130,6 +131,7 @@ binary = {
     '==': Equal, '!=': NEqual,
     '<': Less, '<=': Leq,
     '>': Greater, '>=': Geq,
+    ',': Comma,
 }
 
 def p_binary_expression(p):
@@ -143,7 +145,8 @@ def p_binary_expression(p):
                   | expression TkGeq expression
                   | expression TkGreater expression
                   | expression TkEqual expression
-                  | expression TkNEqual expression"""
+                  | expression TkNEqual expression
+                  | expression TkComma expression"""
     p[0] = binary[p[2]](p[1], p[3])
 
 # --------------------- UNARY OPERATORS ---------------------
@@ -180,20 +183,20 @@ def p_terminal_expression(p):
 # --------------------- ARREGLOS ---------------------
 # Expressiones de arreglos (agregado para bifurcar un reduce/reduce conflict)
 # <array_expr> -> <array>
-def p_array_expr(p):
-    """array_expr : array"""
-    p[0] = p[1]
+# def p_array_expr(p):
+#     """array_expr : array"""
+#     p[0] = p[1]
 
 # Arreglo de enteros
 # <array> -> <array>, <number>
 #           | <number>
-def p_array(p):
-    """array : array TkComma expression
-            | expression"""
-    if len(p) == 4:
-        p[0] = Comma(p[1], p[3])
-    else:
-        p[0] = p[1]
+# def p_array(p):
+#     """array : array TkComma expression
+#             | expression"""
+#     if len(p) == 4:
+#         p[0] = Comma(p[1], p[3])
+#     else:
+#         p[0] = p[1]
 
 # Acceso a un elemento de un arreglo
 # <array_access> -> <id>[<expression>]
