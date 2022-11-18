@@ -8,7 +8,7 @@
 from AST import *
 from lexer import tokens
 
-# Reglas de precedencia (Por revisar)
+# Reglas de precedencia
 precedence = (
     ('nonassoc', 'TkOBlock', 'TkCBlock'),
     ('nonassoc', 'TkSkip'),
@@ -52,7 +52,7 @@ def p_declarations(p):
 # <sec_declarations>  -> <sec_declarations>, <declaration>;
 #                      | <declaration>
 def p_seq_declarations(p):
-    """seq_declarations : declaration TkSemicolon seq_declarations
+    """seq_declarations : seq_declarations TkSemicolon declaration
                         | declaration"""
     if len(p) == 4:
         p[0] = Sequencing(p[1], p[3])
