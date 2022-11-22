@@ -5,7 +5,7 @@
     A : array[0..5]
 
     itIs := false;
-    i := 0;
+    i := 0
     do i <= 5 /\ !itIs -->
        itIs := A[i] == 10;
        i := i+1

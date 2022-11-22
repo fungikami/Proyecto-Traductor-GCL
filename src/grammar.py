@@ -11,6 +11,7 @@ from lexer import tokens
 # Reglas de precedencia
 precedence = (
     ('nonassoc', 'TkOBlock', 'TkCBlock'),
+    ('nonassoc', 'TkOBracket', 'TkCBracket'),
     ('nonassoc', 'TkSkip'),
     ('nonassoc', 'TkPrint'),
     ('nonassoc', 'TkIf'),
@@ -20,13 +21,13 @@ precedence = (
     ('nonassoc', 'TkAsig'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-    ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
+    ('right', 'TkNot'),
+    ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
     ('left', 'TkComma'),
     ('nonassoc', 'UNARY'),
-    ('right', 'TkNot'),
 )
 
 # --------------------- PROGRAM ---------------------
@@ -95,13 +96,15 @@ def p_instructions(p):
 #                |  <conditional>
 #                |  <forLoop>
 #                |  <doLoop>
+#                |  <block>
 def p_instruction(p):
     """instruction : TkSkip
                    | assignment
                    | print_instruction
                    | conditional
                    | for
-                   | do"""
+                   | do
+                   | block"""
     p[0] = Skip() if p[1] == 'skip' else p[1]
 
 # --------------------- ASSIGNMENT ---------------------
@@ -156,7 +159,7 @@ def p_unary_expression(p):
     if p[1] == '-':
         p[0]= UnaryMinus(p[2])
     else:
-        p[0] = Neg(p[2])
+        p[0] = Not(p[2])
 
 # --------------------- TERMINAL EXPRESSIONS ---------------------
 # <expression>    -> (<expression>)
@@ -180,9 +183,9 @@ def p_terminal_expression(p):
 
 # --------------------- ARREGLOS ---------------------
 # Acceso a un elemento de un arreglo
-# <array_access> -> <id>[<expression>]
+# <array_access> -> <expression>[<expression>]
 def p_array_access(p):
-    """array_access : id TkOBracket expression TkCBracket"""
+    """array_access : expression TkOBracket expression TkCBracket"""
     p[0] = ReadArray(p[1], p[3])
 
 # Modificación de un elemento de un arreglo
@@ -225,39 +228,31 @@ def p_guards(p):
         p[0] = p[1]
 
 # Guardia
-# <guard> -> <expression> --> <execute>
+# <guard> -> <expression> --> <instructions>
 def p_guard(p):
-    """guard : expression TkArrow execute """
+    """guard : expression TkArrow instructions """
     p[0] = Then(p[1], p[3])
 
-# Ejecución
-# <execute>   -> <instructions>
-#              | <block>
-def p_execute(p):
-    """execute : instructions
-               | block"""
-    p[0] = p[1]
-
 # --------------------- FOR LOOP ---------------------
-# <forLoop> -> for <id> in <expression> to <expression> --> <execute> rof
+# <forLoop> -> for <id> in <expression> to <expression> --> <instructions> rof
 def p_for(p):
-    """for : TkFor id TkIn expression TkTo expression TkArrow execute TkRof"""
+    """for : TkFor id TkIn expression TkTo expression TkArrow instructions TkRof"""
     p[0] = For(In(p[2], To(p[4], p[6])), p[8])
 
 # --------------------- DO LOOP ---------------------
-# <doLoop> -> do <expression> --> <execute> od
+# <doLoop> -> do <guards> od
 def p_do(p):
-    """do : TkDo expression TkArrow execute TkOd"""
-    p[0] = Do(Then(p[2], p[4]))
+    """do : TkDo guards TkOd"""
+    p[0] = Do(p[2])
 
 # --------------------- TYPES ---------------------
 # <type>  -> int
 #          | bool
-#          | array[<number> .. <number>]
+#          | array[<expression> .. <expression>]
 def p_type(p):
     """type : TkInt
             | TkBool
-            | TkArray TkOBracket number TkSoForth number TkCBracket"""
+            | TkArray TkOBracket expression TkSoForth expression TkCBracket"""
     if len(p) == 2:
         p[0] = Type(p[1])
     else:

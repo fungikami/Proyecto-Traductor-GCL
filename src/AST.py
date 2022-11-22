@@ -64,7 +64,7 @@ class Skip(AST):
         pass
 
     def imprimir(self, level):
-        return f'{"-" * level}Skip'
+        return f'{"-" * level}skip'
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
@@ -138,7 +138,7 @@ class NEqual(AST):
         self.expr2 = expr2
 
     def imprimir(self, level):
-        return f'{"-" * level}NEqual\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+        return f'{"-" * level}NotEqual\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 class Less(AST):
     def __init__(self, expr1, expr2):
@@ -177,15 +177,18 @@ class UnaryMinus(AST):
     def __init__(self, expr):
         self.expr = expr
 
+    def __str__(self):
+        return f'-{self.expr}'
+
     def imprimir(self, level):
         return f'{"-" * level}Minus\n{self.expr.imprimir(level + 1)}'
 
-class Neg(AST):
+class Not(AST):
     def __init__(self, expr):
         self.expr = expr
 
     def imprimir(self, level):
-        return f'{"-" * level}Neg\n{self.expr.imprimir(level + 1)}'
+        return f'{"-" * level}Not\n{self.expr.imprimir(level + 1)}'
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):
@@ -303,7 +306,7 @@ class ArrayType(AST):
         self.end = end
 
     def __str__(self):
-        return f'array[{self.start}..{self.end}]'
+        return f'array[Literal: {self.start}..Literal: {self.end}]'
 
     def imprimir(self, level):
         print("-" * level + "ArrayType")
@@ -326,7 +329,7 @@ class Number(AST):
         self.value = value
 
     def __str__(self):
-        return f'Literal: {self.value}'
+        return f'{self.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Literal: {self.value}'

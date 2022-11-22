@@ -26,6 +26,7 @@ Programa:
                 | <conditional>
                 | <forLoop>
                 | <doLoop>
+                | <block>
 
     - Asignación:
     <assignment> -> <id> := <expression>
@@ -51,7 +52,7 @@ Programa:
                     | <boolean>
                     | <id>
 
-    <array_access> -> id[<expression>]
+    <array_access> -> <expression>[<expression>]
 
     <array_modify> -> <expression>(<expression>:<expression>)
 
@@ -67,16 +68,13 @@ Programa:
     <guards>    -> <guards> [] <guard>
                 | <guard> 
 
-    <guard> -> <expression> --> <execute>
-    
-    <execute>   -> <instructions>
-                | <block>
+    <guard> -> <expression> --> <instructions>
 
     - Iteración for
-    <forLoop> -> for <id> in <expression> to <expression> --> <execute> rof
+    <forLoop> -> for <id> in <expression> to <expression> --> <instructions> rof
 
     - Iteración do
-    <doLoop> -> do <expression> --> <execute> od
+    <doLoop> -> do <guards> od
 
     
 Terminales:
