@@ -74,7 +74,7 @@ Programa:
     <forLoop> -> for <id> in <expression> to <expression> --> <instructions> rof
 
     - Iteración do
-    <doLoop> -> do <expression> --> <instructions> od
+    <doLoop> -> do <guards> od
 
     
 Terminales:

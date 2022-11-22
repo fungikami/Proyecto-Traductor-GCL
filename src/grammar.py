@@ -11,6 +11,7 @@ from lexer import tokens
 # Reglas de precedencia
 precedence = (
     ('nonassoc', 'TkOBlock', 'TkCBlock'),
+    ('nonassoc', 'TkOBracket', 'TkCBracket'),
     ('nonassoc', 'TkSkip'),
     ('nonassoc', 'TkPrint'),
     ('nonassoc', 'TkIf'),
@@ -20,13 +21,13 @@ precedence = (
     ('nonassoc', 'TkAsig'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-    ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
+    ('right', 'TkNot'),
+    ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
     ('left', 'TkComma'),
     ('nonassoc', 'UNARY'),
-    ('right', 'TkNot'),
 )
 
 # --------------------- PROGRAM ---------------------
@@ -247,11 +248,11 @@ def p_do(p):
 # --------------------- TYPES ---------------------
 # <type>  -> int
 #          | bool
-#          | array[<number> .. <number>]
+#          | array[<expression> .. <expression>]
 def p_type(p):
     """type : TkInt
             | TkBool
-            | TkArray TkOBracket number TkSoForth number TkCBracket"""
+            | TkArray TkOBracket expression TkSoForth expression TkCBracket"""
     if len(p) == 2:
         p[0] = Type(p[1])
     else:
