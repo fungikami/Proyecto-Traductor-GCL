@@ -11,21 +11,14 @@ from lexer import tokens
 # Reglas de precedencia
 precedence = (
     ('nonassoc', 'TkOBlock', 'TkCBlock'),
-    ('nonassoc', 'TkOBracket', 'TkCBracket'),
-    ('nonassoc', 'TkSkip'),
-    ('nonassoc', 'TkPrint'),
-    ('nonassoc', 'TkIf'),
-    ('nonassoc', 'TkFor'),
-    ('nonassoc', 'TkDo'),
-    ('nonassoc', 'TkId'),
-    ('nonassoc', 'TkAsig'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-    ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
     ('right', 'TkNot'),
+    ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
     ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
+    ('nonassoc', 'TkOBracket', 'TkCBracket'),
     ('left', 'TkComma'),
     ('nonassoc', 'UNARY'),
 )
