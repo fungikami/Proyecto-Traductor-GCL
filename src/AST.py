@@ -64,7 +64,7 @@ class Skip(AST):
         pass
 
     def imprimir(self, level):
-        return f'{"-" * level}Skip'
+        return f'{"-" * level}skip'
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
@@ -180,12 +180,12 @@ class UnaryMinus(AST):
     def imprimir(self, level):
         return f'{"-" * level}Minus\n{self.expr.imprimir(level + 1)}'
 
-class Neg(AST):
+class Not(AST):
     def __init__(self, expr):
         self.expr = expr
 
     def imprimir(self, level):
-        return f'{"-" * level}Neg\n{self.expr.imprimir(level + 1)}'
+        return f'{"-" * level}Not\n{self.expr.imprimir(level + 1)}'
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):
