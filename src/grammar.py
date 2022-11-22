@@ -10,17 +10,18 @@ from lexer import tokens
 
 # Reglas de precedencia
 precedence = (
-    ('nonassoc', 'TkOBlock', 'TkCBlock'),
     ('left', 'TkOr'),
     ('left', 'TkAnd'),
-    ('right', 'TkNot'),
     ('left', 'TkLess', 'TkLeq', 'TkGeq', 'TkGreater'),
+    ('nonassoc', 'UNOT'),
     ('left', 'TkEqual', 'TkNEqual'),
+    ('right', 'TkNot'),
+    ('nonassoc', 'TkTwoPoints'),
+    ('left', 'TkComma'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
-    ('nonassoc', 'UNARY'),
-    ('left', 'TkComma'),
-    ('nonassoc', 'TkOBracket', 'TkCBracket', 'TkOpenPar', 'TkClosePar'),
+    ('nonassoc', 'UMINUS'),
+    ('nonassoc', 'TkOBlock', 'TkCBlock', 'TkOBracket', 'TkCBracket', 'TkOpenPar', 'TkClosePar'),
 )
 
 # --------------------- PROGRAM ---------------------
@@ -147,8 +148,8 @@ def p_binary_expression(p):
 # <expression>    -> -<expression>
 #                  | !<expression>
 def p_unary_expression(p):
-    """expression : TkMinus expression %prec UNARY
-                  | TkNot expression %prec UNARY"""
+    """expression : TkMinus expression %prec UMINUS
+                  | TkNot expression %prec UNOT"""
     if p[1] == '-':
         p[0]= UnaryMinus(p[2])
     else:
