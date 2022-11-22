@@ -1,0 +1,37 @@
+Block
+-Declare
+--Sequencing
+---max_ : int
+---A : array[Literal: 0..Literal: 5]
+-Sequencing
+--Asig
+---Ident: max_
+---ReadArray
+----Ident: A
+----Literal: 0
+--For
+---In
+----Ident: _
+----To
+-----Literal: 1
+-----Literal: 5
+---If
+----Guard
+-----Then
+------Less
+-------Ident: max_
+-------ReadArray
+--------Ident: A
+--------Ident: _
+------Asig
+-------Ident: max_
+-------ReadArray
+--------Ident: A
+--------Ident: _
+-----Then
+------Geq
+-------Ident: max_
+-------ReadArray
+--------Ident: A
+--------Ident: _
+------skip

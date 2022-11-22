@@ -1,0 +1,29 @@
+Block
+-Declare
+--_A : array[Literal: 0..Literal: 2]
+-Sequencing
+--Asig
+---Ident: _A
+---Comma
+----Comma
+-----Literal: 1
+-----Literal: 2
+----Literal: 4
+--Print
+---Concat
+----Concat
+-----Concat
+------Concat
+-------Concat
+--------String: "First: "
+--------ReadArray
+---------Ident: _A
+---------Literal: 0
+-------String: "\nSecond: "
+------ReadArray
+-------Ident: _A
+-------Literal: 1
+-----String: "\nThird: "
+----ReadArray
+-----Ident: A
+-----Literal: 2

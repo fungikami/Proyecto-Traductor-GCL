@@ -1,0 +1,2 @@
+Error: Sintax error in row 8, column 18: unexpected token '['.
+Error: Sintax error in row 23, column 5: unexpected token 'rof'.

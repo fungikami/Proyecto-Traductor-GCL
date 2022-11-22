@@ -1,0 +1,94 @@
+Block
+-Declare
+--Sequencing
+---Sequencing
+----a, b, c : int
+----d, e, f : bool
+---A : array[Literal: 2..Literal: 4]
+-Sequencing
+--Sequencing
+---Sequencing
+----Sequencing
+-----Sequencing
+------Asig
+-------Ident: a
+-------Minus
+--------Plus
+---------Ident: b
+---------Mult
+----------Literal: 2
+----------Literal: 3
+--------Mult
+---------Minus
+----------Literal: 3
+---------Literal: 2
+------Asig
+-------Ident: d
+-------Literal: false
+-----Asig
+------Ident: A
+------Leq
+-------ReadArray
+--------WriteArray
+---------Ident: A
+---------TwoPoints
+----------Plus
+-----------Literal: 2
+-----------Ident: a
+----------Ident: b
+--------Literal: 2
+-------Not
+--------Not
+---------Ident: b
+----Print
+-----Concat
+------Concat
+-------String: "\"hola mundo \" \n"
+-------Literal: 3
+------ReadArray
+-------WriteArray
+--------Ident: A
+--------TwoPoints
+---------Plus
+----------Literal: 2
+----------Ident: a
+---------Ident: b
+-------Literal: 2
+---Do
+----Guard
+-----Guard
+------Then
+-------Literal: true
+-------Sequencing
+--------Asig
+---------Ident: d
+---------Literal: false
+--------Asig
+---------Ident: a
+---------Plus
+----------Literal: 2
+----------Literal: 3
+------Then
+-------Literal: false
+-------Asig
+--------Ident: a
+--------Plus
+---------Literal: 2
+---------Literal: 3
+-----Then
+------Literal: false
+------Asig
+-------Ident: d
+-------Or
+--------Literal: true
+--------Literal: false
+--For
+---In
+----Ident: x
+----To
+-----Literal: 2
+-----Literal: 5
+---Block
+----Declare
+-----a : int
+----skip
