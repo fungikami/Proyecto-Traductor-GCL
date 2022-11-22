@@ -12,11 +12,11 @@ Block
 -----Ident: b
 ----And
 -----And
-------Equal
--------Neg
+------Not
+-------Equal
 --------Ident: d
--------Neg
---------Ident: a
+--------Not
+---------Ident: a
 ------Ident: b
 -----Ident: a
 ---Ident: b

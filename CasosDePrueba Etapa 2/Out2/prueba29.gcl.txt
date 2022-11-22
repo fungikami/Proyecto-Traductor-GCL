@@ -10,7 +10,7 @@ Block
 ------Ident: a
 ------Ident: b
 -----Or
-------NEqual
+------NotEqual
 -------Ident: b
 -------Literal: 10
 ------Equal

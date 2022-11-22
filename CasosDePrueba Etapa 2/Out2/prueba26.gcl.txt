@@ -5,16 +5,19 @@ Block
 ---c : int
 -Asig
 --Ident: a
---And
----And
+--Or
+---Or
 ----Or
 -----Literal: true
------Or
-------Ident: b
+
+-----Ident: b
+----And
+-----And
 ------Equal
 -------Ident: c
 -------Literal: 4
-----Literal: false
----Or
-----Literal: false
-----Ident: a
+------Literal: false
+
+-----Literal: false
+
+---Ident: a

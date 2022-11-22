@@ -10,6 +10,7 @@ Block
 ---Asig
 ----Ident: itIs
 ----Literal: false
+
 ---Asig
 ----Ident: i
 ----Literal: 0
@@ -19,7 +20,7 @@ Block
 -----Leq
 ------Ident: i
 ------Literal: 5
------Neg
+-----Not
 ------Ident: itIs
 ----Sequencing
 -----Asig

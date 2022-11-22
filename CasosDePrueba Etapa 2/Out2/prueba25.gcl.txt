@@ -7,14 +7,21 @@ Block
 ---Or
 ----Or
 -----Literal: true
+
 -----Literal: false
+
 ----And
 -----And
-------Equal
--------Neg
+------Not
+-------Equal
 --------Literal: true
--------Neg
---------Literal: true
+
+--------Not
+---------Literal: true
+
 ------Literal: false
+
 -----Literal: false
+
 ---Literal: false
+
