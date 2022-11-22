@@ -18,9 +18,9 @@ precedence = (
     ('left', 'TkEqual', 'TkNEqual'),
     ('left', 'TkPlus', 'TkMinus'),
     ('left', 'TkMult'),
-    ('nonassoc', 'TkOBracket', 'TkCBracket'),
-    ('left', 'TkComma'),
     ('nonassoc', 'UNARY'),
+    ('left', 'TkComma'),
+    ('nonassoc', 'TkOBracket', 'TkCBracket', 'TkOpenPar', 'TkClosePar'),
 )
 
 # --------------------- PROGRAM ---------------------
