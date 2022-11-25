@@ -290,7 +290,7 @@ def find_column(input, token):
 # Error: Sintax error in row 2, column 10: unexpected token ’;’.
 def p_error(p):
     if p:
-        print("Error: Sintax error in row %d, column %d: unexpected token '%s'." % (
+        print("Sintax error in row %d, column %d: unexpected token '%s'." % (
             p.lineno, find_column(p.lexer.lexdata, p), p.value))
     else:
-        print("Error: Unexpected end of input")
+        print("Unexpected end of input")

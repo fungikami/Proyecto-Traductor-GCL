@@ -1,3 +1,10 @@
+"""
+    Programa principal que lee un archivo y muestra el AST.
+
+    Autores: Leonel Guerrero, Ka Fung
+    Fecha: 18/11/2022
+"""
+
 from ply import lex, yacc
 from sys import argv, path
 path.append('src')
