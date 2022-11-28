@@ -34,3 +34,4 @@ if __name__ == '__main__':
 
     if result:
         print(result.imprimir(0))
+        result.decorate()

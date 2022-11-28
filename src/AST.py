@@ -5,14 +5,45 @@
     Fecha: 18/11/2022
 """
 
+from SymbolTable import *
+
 class AST:
     pass
+
+class Program(AST):
+    def __init__(self, block):
+        self.block = block
+
+        # Crea una pila de Tabla de Símbolos
+        # Hay que tener una pila dado que podemos tener bloques anidados
+        self.symTabStack = []
+
+    def decorate(self):
+        self.block.decorate(self.symTabStack)
+
+    def imprimir(self, level):
+        return self.block.imprimir(level)
 
 # ------------------ BLOCK ------------------
 class Block(AST):
     def __init__(self, decls, instrs):
         self.decls = decls
         self.instrs = instrs
+
+        # Crea una nueva Tabla de Símbolos
+        self.symTab = SymbolTable()
+
+    def decorate(self, symTabStack):
+        # Empila una nueva Tabla de Símbolos. 
+        # MOSCA, pa revisar la lista debe ser de atrás para adelante
+        symTabStack.append(self.symTab)
+
+        # Decorar la tabla de simbolos
+        self.decls.decorate(symTabStack)
+        self.instrs.decorate(symTabStack)
+
+        # Desempila la Tabla de Símbolos
+        symTabStack.pop()
 
     def imprimir(self, level):
         if (self.decls.seq_decls):
@@ -25,6 +56,9 @@ class Declare(AST):
     def __init__(self, seq_decls):
         self.seq_decls = seq_decls
 
+    def decorate(self, symTabStack):
+        self.seq_decls.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}Declare\n{self.seq_decls.imprimir(level + 1)}'
 
@@ -33,8 +67,23 @@ class Declaration(AST):
         self.idLists = idLists
         self.type = type
 
+    def decorate(self, symTabStack):
+        # ARREGLAR PARA QUE SE LOOPEA POR LA PILA   
+        # Obtiene la Tabla de Símbolos del tope de la pila
+        symTab = symTabStack[-1]
+
+        # Inserta cada id en la tabla de símbolos
+        # OJO owo VER DONDE ATRAPAR EXCEPCIONES AaaaaaaaaaaaAa
+        for id in self.idLists:
+            symTab.insert(id.value, self.type.name, None)
+
+        # Si es un arreglo, hay que verificar que el end > start. Pero esta verif 
+        # se hace es dinámica (no se hace por ahora, pero lo anota para recordarlo)
+
     def imprimir(self, level):
-        return f'{"-" * level}{self.idLists} : {self.type}'
+        # Convierte la lisa de id's en un string
+        idList = ', '.join([str(id) for id in self.idLists])
+        return f'{"-" * level}{idList} : {self.type}'
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -42,25 +91,33 @@ class Sequencing(AST):
         self.instr1 = instr1
         self.instr2 = instr2
 
+    def decorate(self, symTabStack):
+        self.instr1.decorate(symTabStack)
+        self.instr2.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}Sequencing\n{self.instr1.imprimir(level + 1)}\n{self.instr2.imprimir(level + 1)}'
 
-class IdLists(AST):
-    def __init__(self, id, idLists):
-        self.id = id
-        self.idLists = idLists
+# class IdLists(AST):
+#     def __init__(self, id, idLists):
+#         self.id = id
+#         self.idLists = idLists
 
-    def __str__(self):
-        if self.idLists:
-            return f'{self.id}, {self.idLists}'
-        return f'{self.id}'
+#     def __str__(self):
+#         if self.idLists:
+#             return f'{self.id}, {self.idLists}'
+#         return f'{self.id}'
 
-    def imprimir(self, level):
-        return f'{"-" * level}IdLists\n{self.id.imprimir(level + 1)}\n{self.idLists.imprimir(level + 1)}'
+#     # No se usa
+#     # def imprimir(self, level):
+#     #     return f'{"-" * level}IdLists\n{self.id.imprimir(level + 1)}\n{self.idLists.imprimir(level + 1)}'
 
 # ------------------ SKIP ------------------
 class Skip(AST):
     def __init__(self):
+        pass
+
+    def decorate(self, symTabStack):
         pass
 
     def imprimir(self, level):
@@ -72,6 +129,31 @@ class Asig(AST):
         self.id = id
         self.expr = expr
 
+    def decorate(self, symTabStack):
+        # Obtiene la Tabla de Símbolos del tope de la pila
+        symTab = symTabStack[-1]
+
+        # Busca el id en la tabla de símbolos
+        idType = symTab.get_type(self.id.value)
+
+        # Decorar la expresión
+        self.expr.decorate(symTabStack)
+
+        # Verificar que el tamaño de los arreglos sea el mismo que el definido
+        if idType.startswith(ARRAY) and self.expr.type.startswith(ARRAY):
+            # Obtiene el tamaño del arreglo del definido en la tabla de símbolos 
+            arrRange = idType.split('[')[1].split(']')[0].split('..')
+            expectedLength = int(arrRange[1]) - int(arrRange[0]) + 1
+
+            # Obtiene el tamaño del arreglo del tipo de la expresión
+            arrLength = int(self.expr.type.split('=')[1])
+
+            if expectedLength != arrLength:
+                raise Exception(f'Error: El tamaño del arreglo no coincide con el definido')
+        else:
+            if idType != self.expr.type:
+                raise Exception(f'Error: El tipo de la expresión no coincide con el tipo del id')
+
     def imprimir(self, level):
         return f'{"-" * level}Asig\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
 
@@ -79,95 +161,122 @@ class Comma(AST):
     def __init__(self, expr1, expr2):
         self.expr1 = expr1
         self.expr2 = expr2
+        self.len = 1 + self.expr1.len if isinstance(self.expr1, Comma) else 2
+        self.type = f'{ARRAY} with length={self.len}'
+
+    def decorate(self, symTabStack):
+        self.expr1.decorate(symTabStack)
+        if not isinstance(self.expr1, Comma) and self.expr1.type != INT:
+            raise Exception(f'Error: El tipo de la expresión no es int. Expresión: {self.expr1.type}')
+
+        self.expr2.decorate(symTabStack)
+        if self.expr2.type != INT:
+            raise Exception(f'Error: El tipo de la expresión no es int. Expresión: {self.expr2.type}')
+      
 
     def imprimir(self, level):
         return f'{"-" * level}Comma\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 # ------------------ BINARY OPERATORS ------------------
-class Plus(AST):
-    def __init__(self, expr1, expr2):
+class BinOp(AST):
+    def __init__(self, expr1, expr2, expectedType, valueType):
         self.expr1 = expr1
         self.expr2 = expr2
+        self.expectedType = expectedType
+        self.type = valueType
+
+    def decorate(self, symTabStack):
+        # Caso para el == y != que pueden comparar booleanos o enteros
+        if self.expectedType == ANY:
+            self.expr1.decorate(symTabStack)
+            self.expr2.decorate(symTabStack)
+
+            # Verifica que los tipos de las expresiones sean iguales
+            if self.expr1.type != self.expr2.type:
+                raise Exception(f'Error: Los tipos de las expresiones no coinciden.')
+
+        else:
+            self.expr1.decorate(symTabStack)
+            if (self.expr1.type != self.expectedType):
+                raise Exception(f'Error: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr1.type}')
+
+            self.expr2.decorate(symTabStack)
+            if (self.expr2.type != self.expectedType):
+                raise Exception(f'Error: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr2.type}')
+
+class Plus(BinOp):
+    def __init__(self, expr1, expr2):
+        super().__init__(expr1, expr2, INT, INT)
 
     def imprimir(self, level):
         return f'{"-" * level}Plus\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Minus(AST):
+class Minus(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, INT)
 
     def imprimir(self, level):
         return f'{"-" * level}Minus\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Mult(AST):
+class Mult(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, INT)
 
     def imprimir(self, level):
         return f'{"-" * level}Mult\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class And(AST):
+class And(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, BOOL, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}And\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Or(AST):
+class Or(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, BOOL, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Or\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Equal(AST):
+class Equal(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, ANY, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Equal\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class NEqual(AST):
+class NEqual(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, ANY, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}NotEqual\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Less(AST):
+class Less(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Less\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Leq(AST):
+class Leq(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Leq\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Greater(AST):
+class Greater(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Greater\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
-class Geq(AST):
+class Geq(BinOp):
     def __init__(self, expr1, expr2):
-        self.expr1 = expr1
-        self.expr2 = expr2
+        super().__init__(expr1, expr2, INT, BOOL)
 
     def imprimir(self, level):
         return f'{"-" * level}Geq\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -176,6 +285,12 @@ class Geq(AST):
 class UnaryMinus(AST):
     def __init__(self, expr):
         self.expr = expr
+        self.type = INT
+
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+        if self.expr.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
 
     def __str__(self):
         return f'-{self.expr}'
@@ -186,6 +301,12 @@ class UnaryMinus(AST):
 class Not(AST):
     def __init__(self, expr):
         self.expr = expr
+        self.type = BOOL
+
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+        if self.expr.type != BOOL:
+            raise Exception(f'Error: El tipo de la expresión esperado es {BOOL}, pero se obtuvo {self.expr.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}Not\n{self.expr.imprimir(level + 1)}'
@@ -195,6 +316,13 @@ class ReadArray(AST):
     def __init__(self, id, expr):
         self.id = id
         self.expr = expr
+        self.type = None
+
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+        if self.expr.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+        self.type = symTabStack[-1].get_type(self.id.value)
 
     def imprimir(self, level):
         return f'{"-" * level}ReadArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -204,6 +332,14 @@ class WriteArray(AST):
         self.id = id
         self.expr = expr
 
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+        if self.expr.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+
+        # Ver como agregar los elementos al arreglo en la tabla de símbolos
+        #symTabStack.update(self.id, self.expr.type)
+
     def imprimir(self, level):
         return f'{"-" * level}WriteArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
 
@@ -211,6 +347,12 @@ class TwoPoints(AST):
     def __init__(self, expr1, expr2):
         self.expr1 = expr1
         self.expr2 = expr2
+
+    def decorate(self, symTabStack):
+        self.expr1.decorate(symTabStack)
+        self.expr2.decorate(symTabStack)
+        if self.expr1.type != INT or self.expr2.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}TwoPoints\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -220,6 +362,9 @@ class Print(AST):
     def __init__(self, expr):
         self.expr = expr
 
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}Print\n{self.expr.imprimir(level + 1)}'
 
@@ -228,6 +373,11 @@ class Concat(AST):
     def __init__(self, expr1, expr2):
         self.expr1 = expr1
         self.expr2 = expr2
+        self.type = STR
+
+    def decorate(self, symTabStack):
+        # REVISAR SI HAY QUE VERIFICAR ALGO
+        pass
 
     def imprimir(self, level):
         return f'{"-" * level}Concat\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -237,6 +387,9 @@ class If(AST):
     def __init__(self, guards):
         self.guards = guards
 
+    def decorate(self, symTabStack):
+        guards.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}If\n{self.guards.imprimir(level + 1)}'
 
@@ -245,6 +398,10 @@ class Guard(AST):
         self.guards = guards
         self.guard = guard
 
+    def decorate(self, symTabStack):
+        self.guards.decorate(symTabStack)
+        self.guard.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}Guard\n{self.guards.imprimir(level + 1)}\n{self.guard.imprimir(level + 1)}'
 
@@ -252,6 +409,10 @@ class Then(AST):
     def __init__(self, expr, stmts):
         self.expr = expr
         self.stmts = stmts
+
+    def decorate(self, symTabStack):
+        self.expr.decorate(symTabStack)
+        self.stmts.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}Then\n{self.expr.imprimir(level + 1)}\n{self.stmts.imprimir(level + 1)}'
@@ -262,6 +423,10 @@ class For(AST):
         self.range = range
         self.instr = instr
 
+    def decorate(self, symTabStack):
+        self.range.decorate(symTabStack)
+        self.instr.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}For\n{self.range.imprimir(level + 1)}\n{self.instr.imprimir(level + 1)}'
 
@@ -269,6 +434,9 @@ class In(AST):
     def __init__(self, id, range):
         self.id = id
         self.range = range
+
+    def decorate(self, symTabStack):
+        self.range.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}In\n{self.id.imprimir(level + 1)}\n{self.range.imprimir(level + 1)}'
@@ -278,6 +446,12 @@ class To(AST):
         self.expr1 = expr1
         self.expr2 = expr2
 
+    def decorate(self, symTabStack):
+        self.expr1.decorate(symTabStack)
+        self.expr2.decorate(symTabStack)
+        if self.expr1.type != INT or self.expr2.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
+
     def imprimir(self, level):
         return f'{"-" * level}To\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
@@ -286,16 +460,22 @@ class Do(AST):
     def __init__(self, stmts):
         self.stmts = stmts
 
+    def decorate(self, symTabStack):
+        self.stmts.decorate(symTabStack)
+
     def imprimir(self, level):
         return f'{"-" * level}Do\n{self.stmts.imprimir(level + 1)}'
 
 # ------------------ TYPES ------------------
 class Type(AST):
-    def __init__(self, type):
-        self.type = type
+    def __init__(self, name):
+        self.name = name
 
     def __str__(self):
-        return f'{self.type}'
+        return f'{self.name}'
+
+    def decorate(self, symTabStack):
+        pass
 
     # def imprimir(self, level):
     #     return f'{"-" * level}Type\n{self.type}'
@@ -304,9 +484,19 @@ class ArrayType(AST):
     def __init__(self, start, end):
         self.start = start
         self.end = end
+        self.name = f'{ARRAY}[{self.start}..{self.end}]'
 
     def __str__(self):
         return f'array[Literal: {self.start}..Literal: {self.end}]'
+
+    def decorate(self, symTabStack):
+        self.start.decorate(symTabStack)
+        if self.start.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.start.type}')
+
+        self.end.decorate(symTabStack)
+        if self.end.type != INT:
+            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.end.type}')
 
     def imprimir(self, level):
         print("-" * level + "ArrayType")
@@ -317,9 +507,13 @@ class ArrayType(AST):
 class Id(AST):
     def __init__(self, value):
         self.value = value
+        self.type = None
 
     def __str__(self):
         return f'{self.value}'
+
+    def decorate(self, symTabStack):
+        self.type = symTabStack.get_type(self.value)
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value}'
@@ -327,9 +521,13 @@ class Id(AST):
 class Number(AST):
     def __init__(self, value):
         self.value = value
+        self.type = INT
 
     def __str__(self):
         return f'{self.value}'
+
+    def decorate(self, symTabStack):
+        pass
 
     def imprimir(self, level):
         return f'{"-" * level}Literal: {self.value}'
@@ -337,9 +535,13 @@ class Number(AST):
 class Boolean(AST):
     def __init__(self, value):
         self.value = value
+        self.type = BOOL
 
     def __str__(self):
         return f'{self.value}'
+
+    def decorate(self, symTabStack):
+        pass
 
     def imprimir(self, level):
         return f'{"-" * level}Literal: {self.value}'
@@ -347,9 +549,23 @@ class Boolean(AST):
 class String(AST):
     def __init__(self, value):
         self.value = value
+        self.type = STR
 
     def __str__(self):
         return f'{self.value}'
 
+    def decorate(self, symTabStack):
+        pass
+
     def imprimir(self, level):
         return f'{"-" * level}String: "{self.value}"'
+
+
+# Alias para tipos de datos
+INT = 'int'
+BOOL = 'bool'
+STR = 'str'
+ARRAY = 'array'
+
+# ANY es que puede ser entero o booleano
+ANY = 'any'

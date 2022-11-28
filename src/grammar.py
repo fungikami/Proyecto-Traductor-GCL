@@ -27,7 +27,7 @@ precedence = (
 # --------------------- PROGRAM ---------------------
 def p_program(p):
     """program : block"""
-    p[0] = p[1]
+    p[0] = Program(p[1])
 
 # --------------------- BLOCK ---------------------
 # <block> -> |[ <declarations> <instructions> ]|
@@ -66,11 +66,10 @@ def p_declaration(p):
 def p_idLists(p):
     """idLists : id TkComma idLists
                | id"""
-
     if len(p) == 4:
-        p[0] = IdLists(p[1], p[3])
+        p[0] = [p[1], *p[3]]
     else:
-        p[0] = p[1]
+        p[0] = [p[1]]
 
 # --------------------- INSTRUCTIONS ---------------------
 # <instructions> -> <instructions>, <instruction>;
