@@ -61,7 +61,7 @@ class Declare(AST):
         self.seq_decls.decorate(symTabStack)
 
     def imprimir(self, level):
-        return f'{"-" * level}Declare\n{self.seq_decls.imprimir(level + 1)}'
+        return f'{"-" * level}Symbols Table\n{self.seq_decls.imprimir(level + 1, True)}'
 
 class Declaration(AST):
     def __init__(self, idLists, type):
@@ -82,14 +82,18 @@ class Declaration(AST):
 
         for id in self.idLists:
             symTabStack.insert(id.value, self.type.name, None)
+            id.type = self.type.name
 
         # Si es un arreglo, hay que verificar que el end > start. Pero esta verif 
         # se hace es dinámica (no se hace por ahora, pero lo anota para recordarlo)
 
     def imprimir(self, level):
-        # Convierte la lisa de id's en un string
-        idList = ', '.join([str(id) for id in self.idLists])
-        return f'{"-" * level}{idList} : {self.type}'
+        # Convierte la lista de id's en un string
+        # idList = ', '.join([str(id) for id in self.idLists])
+        result = ''
+        for id in self.idLists:
+            result += f'{"-" * level}variable: {id.value} | type: {self.type.name}\n'
+        return result
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -101,7 +105,9 @@ class Sequencing(AST):
         self.instr1.decorate(symTabStack)
         self.instr2.decorate(symTabStack)
 
-    def imprimir(self, level):
+    def imprimir(self, level, isDecl = False):
+        if isDecl:
+            return f'{self.instr1.imprimir(level)}\n{self.instr2.imprimir(level)}'
         return f'{"-" * level}Sequencing\n{self.instr1.imprimir(level + 1)}\n{self.instr2.imprimir(level + 1)}'
 
 # class IdLists(AST):
@@ -156,13 +162,14 @@ class Asig(AST):
 
             if expectedLength != arrLength:
                 raise Exception(f'Error: El tamaño del arreglo no coincide con el definido')
-            symTabStack.update(self.id.value, self.expr.value)
             
         else:
             if idType != self.expr.type:
                 raise Exception(f'Error: El tipo de la expresión no coincide con el tipo del id')
-            
-            symTabStack.update(self.id.value, self.expr.value)
+
+        symTabStack.update(self.id.value, self.expr.value)
+        # # Decorar el id
+        self.id.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}Asig\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -186,7 +193,7 @@ class Comma(AST):
       
 
     def imprimir(self, level):
-        return f'{"-" * level}Comma\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+        return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
@@ -337,6 +344,9 @@ class ReadArray(AST):
         value = symTabStack.get_value(self.id.value) 
         if value is None:
             raise Exception(f'Error: El arreglo {id.value} no ha sido inicializado')
+
+        # Decorar id
+        self.id.decorate(symTabStack)
 
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
@@ -543,7 +553,7 @@ class Id(AST):
 
 
     def imprimir(self, level):
-        return f'{"-" * level}Ident: {self.value}'
+        return f'{"-" * level}Ident: {self.value} | type: {self.type}'
 
 class Number(AST):
     def __init__(self, value):
@@ -557,7 +567,7 @@ class Number(AST):
         pass
 
     def imprimir(self, level):
-        return f'{"-" * level}Literal: {self.value}'
+        return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
 class Boolean(AST):
     def __init__(self, value):
@@ -571,7 +581,7 @@ class Boolean(AST):
         pass
 
     def imprimir(self, level):
-        return f'{"-" * level}Literal: {self.value}'
+        return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
 class String(AST):
     def __init__(self, value):

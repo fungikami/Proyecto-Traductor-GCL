@@ -33,9 +33,10 @@ if __name__ == '__main__':
     result = parser.parse(data, lexer=lexer)
 
     if result:
-        print(result.imprimir(0))
+        # print(result.imprimir(0))
         try:
             result.decorate()
+            print(result.imprimir(0))
         except Exception as e:
             print(e)
             exit(1)
