@@ -6,6 +6,7 @@
 """
 
 from SymbolTable import *
+import sys
 
 class AST:
     pass
@@ -16,7 +17,7 @@ class Program(AST):
 
         # Crea una pila de Tabla de Símbolos
         # Hay que tener una pila dado que podemos tener bloques anidados
-        self.symTabStack = []
+        self.symTabStack = SymbolTable()
 
     def decorate(self):
         self.block.decorate(self.symTabStack)
@@ -31,19 +32,19 @@ class Block(AST):
         self.instrs = instrs
 
         # Crea una nueva Tabla de Símbolos
-        self.symTab = SymbolTable()
+        # self.symTab = SymbolTable()
 
-    def decorate(self, symTabStack):
+    def decorate(self, symTabStack: SymbolTable):
         # Empila una nueva Tabla de Símbolos. 
         # MOSCA, pa revisar la lista debe ser de atrás para adelante
-        symTabStack.append(self.symTab)
+        symTabStack.open_scope()
 
         # Decorar la tabla de simbolos
         self.decls.decorate(symTabStack)
         self.instrs.decorate(symTabStack)
 
         # Desempila la Tabla de Símbolos
-        symTabStack.pop()
+        symTabStack.close_scope()
 
     def imprimir(self, level):
         if (self.decls.seq_decls):
@@ -70,12 +71,17 @@ class Declaration(AST):
     def decorate(self, symTabStack):
         # ARREGLAR PARA QUE SE LOOPEA POR LA PILA   
         # Obtiene la Tabla de Símbolos del tope de la pila
-        symTab = symTabStack[-1]
+        # symTab = symTabStack[-1]
 
         # Inserta cada id en la tabla de símbolos
         # OJO owo VER DONDE ATRAPAR EXCEPCIONES AaaaaaaaaaaaAa
+        if ARRAY in self.type.name:
+            tmp = self.type.name.split('..')
+            if tmp[0][-1] > tmp[1][0]:
+                raise Exception(f'Error: El rango del arreglo {self.type.name} es inválido')
+
         for id in self.idLists:
-            symTab.insert(id.value, self.type.name, None)
+            symTabStack.insert(id.value, self.type.name, None)
 
         # Si es un arreglo, hay que verificar que el end > start. Pero esta verif 
         # se hace es dinámica (no se hace por ahora, pero lo anota para recordarlo)
@@ -131,10 +137,10 @@ class Asig(AST):
 
     def decorate(self, symTabStack):
         # Obtiene la Tabla de Símbolos del tope de la pila
-        symTab = symTabStack[-1]
+        # symTab = symTabStack[-1]
 
         # Busca el id en la tabla de símbolos
-        idType = symTab.get_type(self.id.value)
+        idType = symTabStack.get_type(self.id.value)
 
         # Decorar la expresión
         self.expr.decorate(symTabStack)
@@ -150,9 +156,13 @@ class Asig(AST):
 
             if expectedLength != arrLength:
                 raise Exception(f'Error: El tamaño del arreglo no coincide con el definido')
+            symTabStack.update(self.id.value, self.expr.value)
+            
         else:
             if idType != self.expr.type:
                 raise Exception(f'Error: El tipo de la expresión no coincide con el tipo del id')
+            
+            symTabStack.update(self.id.value, self.expr.value)
 
     def imprimir(self, level):
         return f'{"-" * level}Asig\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -163,6 +173,7 @@ class Comma(AST):
         self.expr2 = expr2
         self.len = 1 + self.expr1.len if isinstance(self.expr1, Comma) else 2
         self.type = f'{ARRAY} with length={self.len}'
+        self.value = f'{self.expr1.value}, {self.expr2.value}'
 
     def decorate(self, symTabStack):
         self.expr1.decorate(symTabStack)
@@ -184,6 +195,7 @@ class BinOp(AST):
         self.expr2 = expr2
         self.expectedType = expectedType
         self.type = valueType
+        self.value = f'{self.expr1.value} + {self.expr2.value}'
 
     def decorate(self, symTabStack):
         # Caso para el == y != que pueden comparar booleanos o enteros
@@ -316,13 +328,21 @@ class ReadArray(AST):
     def __init__(self, id, expr):
         self.id = id
         self.expr = expr
-        self.type = None
+        # Como solo hay arreglos de enteros leer un arreglo siempre deberia dar un entero
+        self.type = INT
+        self.value = f'{id}[{expr}]'
 
     def decorate(self, symTabStack):
+        # symTab = symTabStack[-1]
+        value = symTabStack.get_value(self.id.value) 
+        if value is None:
+            raise Exception(f'Error: El arreglo {id.value} no ha sido inicializado')
+
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
             raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
-        self.type = symTabStack[-1].get_type(self.id.value)
+        # No se si deberiamos verificar que el valor de expr este en el rango del arreglo
+        # self.type = symTabStack[-1].get_type(self.id.value)
 
     def imprimir(self, level):
         return f'{"-" * level}ReadArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -388,7 +408,7 @@ class If(AST):
         self.guards = guards
 
     def decorate(self, symTabStack):
-        guards.decorate(symTabStack)
+        self.guards.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}If\n{self.guards.imprimir(level + 1)}'
@@ -508,12 +528,19 @@ class Id(AST):
     def __init__(self, value):
         self.value = value
         self.type = None
+        self.idValue = None
 
     def __str__(self):
         return f'{self.value}'
 
     def decorate(self, symTabStack):
+        # Obtener el tope de la pila de tablas de símbolos
         self.type = symTabStack.get_type(self.value)
+
+        self.idValue = symTabStack.get_value(self.value)
+        if self.idValue == None:
+            raise Exception(f'Error: El identificador \'{self.value}\' no esta inicializado')
+
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value}'
