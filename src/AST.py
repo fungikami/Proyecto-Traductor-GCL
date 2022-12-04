@@ -93,7 +93,7 @@ class Declaration(AST):
         result = ''
         for id in self.idLists:
             result += f'{"-" * level}variable: {id.value} | type: {self.type.name}\n'
-        return result
+        return result.rstrip()
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
