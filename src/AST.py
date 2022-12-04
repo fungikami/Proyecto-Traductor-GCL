@@ -58,7 +58,8 @@ class Declare(AST):
         self.seq_decls = seq_decls
 
     def decorate(self, symTabStack):
-        self.seq_decls.decorate(symTabStack)
+        if self.seq_decls:
+            self.seq_decls.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.imprimir(level + 1, True)}'
@@ -87,7 +88,7 @@ class Declaration(AST):
         # Si es un arreglo, hay que verificar que el end > start. Pero esta verif 
         # se hace es dinámica (no se hace por ahora, pero lo anota para recordarlo)
 
-    def imprimir(self, level):
+    def imprimir(self, level, isDecl = False):
         # Convierte la lista de id's en un string
         # idList = ', '.join([str(id) for id in self.idLists])
         result = ''
@@ -202,7 +203,7 @@ class BinOp(AST):
         self.expr2 = expr2
         self.expectedType = expectedType
         self.type = valueType
-        self.value = f'{self.expr1.value} + {self.expr2.value}'
+        # self.value = f'{self.expr1.value} + {self.expr2.value}'
 
     def decorate(self, symTabStack):
         # Caso para el == y != que pueden comparar booleanos o enteros
@@ -226,6 +227,7 @@ class BinOp(AST):
 class Plus(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, INT)
+        self.value = f'{self.expr1.value} + {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Plus\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -233,6 +235,7 @@ class Plus(BinOp):
 class Minus(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, INT)
+        self.value = f'{self.expr1.value} - {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Minus\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -240,6 +243,7 @@ class Minus(BinOp):
 class Mult(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, INT)
+        self.value = f'{self.expr1.value} * {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Mult\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -247,6 +251,7 @@ class Mult(BinOp):
 class And(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, BOOL, BOOL)
+        self.value = f'{self.expr1.value} /\ {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}And\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -254,6 +259,7 @@ class And(BinOp):
 class Or(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, BOOL, BOOL)
+        self.value = f'{self.expr1.value} \/ {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Or\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -261,6 +267,7 @@ class Or(BinOp):
 class Equal(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, ANY, BOOL)
+        self.value = f'{self.expr1.value} == {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Equal\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -268,6 +275,7 @@ class Equal(BinOp):
 class NEqual(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, ANY, BOOL)
+        self.value = f'{self.expr1.value} != {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}NotEqual\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -275,6 +283,7 @@ class NEqual(BinOp):
 class Less(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, BOOL)
+        self.value = f'{self.expr1.value} < {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Less\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -282,6 +291,7 @@ class Less(BinOp):
 class Leq(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, BOOL)
+        self.value = f'{self.expr1.value} <= {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Leq\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -289,6 +299,7 @@ class Leq(BinOp):
 class Greater(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, BOOL)
+        self.value = f'{self.expr1.value} > {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Greater\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -296,6 +307,7 @@ class Greater(BinOp):
 class Geq(BinOp):
     def __init__(self, expr1, expr2):
         super().__init__(expr1, expr2, INT, BOOL)
+        self.value = f'{self.expr1.value} >= {self.expr2.value}'
 
     def imprimir(self, level):
         return f'{"-" * level}Geq\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -305,6 +317,7 @@ class UnaryMinus(AST):
     def __init__(self, expr):
         self.expr = expr
         self.type = INT
+        self.value = f'-{self.expr.value}'
 
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
@@ -321,6 +334,7 @@ class Not(AST):
     def __init__(self, expr):
         self.expr = expr
         self.type = BOOL
+        self.value = f'!{self.expr.value}'
 
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
@@ -343,7 +357,7 @@ class ReadArray(AST):
         # symTab = symTabStack[-1]
         value = symTabStack.get_value(self.id.value) 
         if value is None:
-            raise Exception(f'Error: El arreglo {id.value} no ha sido inicializado')
+            raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
 
         # Decorar id
         self.id.decorate(symTabStack)
@@ -361,8 +375,14 @@ class WriteArray(AST):
     def __init__(self, id, expr):
         self.id = id
         self.expr = expr
+        self.value = f'{id}({expr.value})'
 
     def decorate(self, symTabStack):
+        if isinstance(self.id, Id):
+            value = symTabStack.get_value(self.id.value) 
+            if value is None:
+                raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+        self.id.decorate(symTabStack)
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
             raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
@@ -377,6 +397,7 @@ class TwoPoints(AST):
     def __init__(self, expr1, expr2):
         self.expr1 = expr1
         self.expr2 = expr2
+        self.value = f'{expr1}:{expr2}'
 
     def decorate(self, symTabStack):
         self.expr1.decorate(symTabStack)

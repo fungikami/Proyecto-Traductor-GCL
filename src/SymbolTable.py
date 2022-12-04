@@ -24,7 +24,7 @@ class SymbolTable:
             self.table[name] = {}
 
         if self.level in self.table[name]:
-            raise Exception("Variable ya declarada")
+            raise Exception(f"La variable {name} ya esta declarada")
 
         self.table[name][self.level] = [type, value]
 
@@ -44,7 +44,7 @@ class SymbolTable:
                 return self.table[name][lvl]
             lvl -= 1
 
-        raise Exception("Variable no declarada")
+        raise Exception(f'La variable {name} no esta declarada')
 
         # if name not in self.table:
         #     raise Exception("Variable no declarada")
