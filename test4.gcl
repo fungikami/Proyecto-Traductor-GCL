@@ -1,0 +1,11 @@
+|[
+  declare
+    x, y : int;
+    z : bool
+
+  // Declarar dos o más veces la misma variable (redeclaración de variables).
+  x := 1;
+  y := 3;
+  z := x == y;
+  y := z + x
+]|

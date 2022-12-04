@@ -2,13 +2,11 @@
     Implementación de la tabla de símbolos para el lenguaje GCL.
 
     Autores: Leonel Guerrero, Ka Fung
-    Fecha: 18/11/2022
+    Fecha: 05/12/2022
 """
 
 class SymbolTable:
-    """ Clase que implementa la tabla de símbolos del intérprete de GCL.
-    """
-
+    """ Clase que implementa la tabla de símbolos del intérprete de GCL. """
     def __init__(self):
         self.level = -1
         self.table = {}
@@ -18,20 +16,16 @@ class SymbolTable:
             Inserta una variable en la tabla de símbolos, 
             dado su nombre, tipo y valor.
         """
-        # if name in self.table:
-        #     raise Exception("Variable ya declarada")
         if name not in self.table:
             self.table[name] = {}
 
         if self.level in self.table[name]:
-            raise Exception(f"La variable {name} ya esta declarada")
+            raise Exception(f'Error: Variable "{name}" already declared')
 
         self.table[name][self.level] = [type, value]
 
     def update(self, name, value):
         """ Actualiza el valor de una variable en la tabla de símbolos. """
-        # if name not in self.table:
-        #     raise Exception("Variable no declarada")
         var = self.lookup(name)
         var[1] = value
         # self.table[name][1] = value
@@ -44,12 +38,7 @@ class SymbolTable:
                 return self.table[name][lvl]
             lvl -= 1
 
-        raise Exception(f'La variable {name} no esta declarada')
-
-        # if name not in self.table:
-        #     raise Exception("Variable no declarada")
-
-        # return self.table[name]
+        raise Exception(f'Error: Variable "{name}" not declared')
 
     def get_type(self, name):
         """ Obtiene el tipo de una variable en la tabla de símbolos. """

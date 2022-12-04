@@ -1,0 +1,9 @@
+|[
+  declare
+    x, y : int
+
+  // Utilizar variables sin haberlas declarado
+  x := 1;
+  y := 3;
+  p := x + y
+]|

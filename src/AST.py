@@ -117,7 +117,7 @@ class Asig(AST):
         self.expr = expr
 
     def decorate(self, symTabStack):
-        # Busca el id en la tabla de símbolos
+        # Busca el tipo del id en la tabla de símbolos
         idType = symTabStack.get_type(self.id.value)
 
         # Decorar la expresión
@@ -296,9 +296,9 @@ class ReadArray(AST):
 
     def decorate(self, symTabStack):
         # symTab = symTabStack[-1]
-        value = symTabStack.get_value(self.id.value) 
-        if value is None:
-            raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+        # value = symTabStack.get_value(self.id.value) 
+        # if value is None:
+        #     raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
 
         # Decorar id
         self.id.decorate(symTabStack)
@@ -319,10 +319,10 @@ class WriteArray(AST):
         self.value = f'{id}({expr.value})'
 
     def decorate(self, symTabStack):
-        if isinstance(self.id, Id):
-            value = symTabStack.get_value(self.id.value) 
-            if value is None:
-                raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+        # if isinstance(self.id, Id):
+        #     value = symTabStack.get_value(self.id.value) 
+        #     if value is None:
+        #         raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
         
         self.id.decorate(symTabStack)
         self.expr.decorate(symTabStack)
@@ -507,9 +507,9 @@ class Id(AST):
         # Obtener el tope de la pila de tablas de símbolos
         self.type = symTabStack.get_type(self.value)
 
-        self.idValue = symTabStack.get_value(self.value)
-        if self.idValue == None:
-            raise Exception(f'Error: El identificador \'{self.value}\' no esta inicializado')
+        # self.idValue = symTabStack.get_value(self.value)
+        # if self.idValue == None:
+        #     raise Exception(f'Error: El identificador \'{self.value}\' no esta inicializado')
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
