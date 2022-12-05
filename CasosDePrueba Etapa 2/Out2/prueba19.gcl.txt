@@ -1,10 +1,9 @@
 Block
--Declare
---Sequencing
----Sequencing
-----a : int
-----isTrue : bool
----A, B : array[Literal: -2..Literal: 3]
+-Symbols Table
+--variable: a | type: int
+--variable: isTrue | type: bool
+--variable: A | type: array[-2..3]
+--variable: B | type: array[-2..3]
 -Asig
---Ident: a
---Literal: 0
+--Ident: a | type: int
+--Literal: 0 | type: int

@@ -1,9 +1,9 @@
 Block
--Declare
---Sequencing
----a, b : int
----isTrue, isFalse : bool
+-Symbols Table
+--variable: a | type: int
+--variable: b | type: int
+--variable: isTrue | type: bool
+--variable: isFalse | type: bool
 -Asig
---Ident: isTrue
---Literal: true
-
+--Ident: isTrue | type: bool
+--Literal: true | type: bool

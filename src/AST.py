@@ -103,13 +103,13 @@ class Sequencing(AST):
 
     def imprimir(self, level, isDecl = False):
         if isDecl:
-            return f'{self.instr1.imprimir(level)}\n{self.instr2.imprimir(level)}'
+            return f'{self.instr1.imprimir(level, True)}\n{self.instr2.imprimir(level, True)}'
         return f'{"-" * level}Sequencing\n{self.instr1.imprimir(level + 1)}\n{self.instr2.imprimir(level + 1)}'
 
 # ------------------ SKIP ------------------
 class Skip(AST):
-    def __init__(self, row, column) -> None:
-        super().__init__(row, column)
+    def __init__(self) -> None:
+        pass
         
     def decorate(self, symTabStack):
         pass
@@ -224,7 +224,7 @@ class Minus(BinOp):
         self.value = f'{self.expr1.value} - {self.expr2.value}'
 
 class Mult(BinOp):
-    def __init__(self, expr1, expr2m, row, column) -> None:
+    def __init__(self, expr1, expr2, row, column) -> None:
         super().__init__(expr1, expr2, 'Mult', INT, INT, row, column)
         self.value = f'{self.expr1.value} * {self.expr2.value}'
 
@@ -313,10 +313,9 @@ class ReadArray(AST):
         self.value = f'{id}[{expr}]'
 
     def decorate(self, symTabStack):
-        # symTab = symTabStack[-1]
-        # value = symTabStack.get_value(self.id.value) 
-        # if value is None:
-        #     raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+        value = symTabStack.get_value(self.id.value, self.row, self.column) 
+        if value is None:
+            raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
 
         # Decorar id
         self.id.decorate(symTabStack)
@@ -389,7 +388,8 @@ class Concat(AST):
         self.type = STR
 
     def decorate(self, symTabStack):
-        pass
+        self.expr1.decorate(symTabStack)
+        self.expr2.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}Concat\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'

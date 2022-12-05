@@ -1,14 +1,14 @@
 Block
--Declare
---_A : array[Literal: 0..Literal: 2]
+-Symbols Table
+--variable: _A | type: array[0..2]
 -Sequencing
 --Asig
----Ident: _A
----Comma
-----Comma
------Literal: 1
------Literal: 2
-----Literal: 4
+---Ident: _A | type: array[0..2]
+---Comma | type: array with length=3
+----Comma | type: array with length=2
+-----Literal: 1 | type: int
+-----Literal: 2 | type: int
+----Literal: 4 | type: int
 --Print
 ---Concat
 ----Concat
@@ -16,14 +16,14 @@ Block
 ------Concat
 -------Concat
 --------String: "First: "
---------ReadArray
----------Ident: _A
----------Literal: 0
+--------ReadArray | type: int
+---------Ident: _A | type: None
+---------Literal: 0 | type: int
 -------String: "\nSecond: "
-------ReadArray
--------Ident: _A
--------Literal: 1
+------ReadArray | type: int
+-------Ident: _A | type: None
+-------Literal: 1 | type: int
 -----String: "\nThird: "
-----ReadArray
------Ident: A
------Literal: 2
+----ReadArray | type: int
+-----Ident: A | type: None
+-----Literal: 2 | type: int

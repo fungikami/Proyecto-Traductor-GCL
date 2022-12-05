@@ -1,20 +1,20 @@
 Block
--Declare
---a : int
+-Symbols Table
+--variable: a | type: int
 -Asig
---Ident: a
---Minus
----Minus
-----Plus
------Plus
-------Literal: 10
-------Literal: 2
------Mult
-------Mult
--------Minus
---------Literal: 34
--------Minus
---------Literal: 100
-------Literal: 2
-----Literal: 1
----Literal: 0
+--Ident: a | type: int
+--Minus | type: int
+---Minus | type: int
+----Plus | type: int
+-----Plus | type: int
+------Literal: 10 | type: int
+------Literal: 2 | type: int
+-----Mult | type: int
+------Mult | type: int
+-------Minus | type: int
+--------Literal: 34 | type: int
+-------Minus | type: int
+--------Literal: 100 | type: int
+------Literal: 2 | type: int
+----Literal: 1 | type: int
+---Literal: 0 | type: int

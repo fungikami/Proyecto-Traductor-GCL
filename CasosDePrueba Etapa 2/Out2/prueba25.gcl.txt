@@ -1,27 +1,20 @@
 Block
--Declare
---a : bool
+-Symbols Table
+--variable: a | type: bool
 -Asig
---Ident: a
---Or
----Or
-----Or
------Literal: true
-
------Literal: false
-
-----And
------And
-------Not
--------Equal
---------Literal: true
-
---------Not
----------Literal: true
-
-------Literal: false
-
------Literal: false
-
----Literal: false
-
+--Ident: a | type: bool
+--Or | type: bool
+---Or | type: bool
+----Or | type: bool
+-----Literal: true | type: bool
+-----Literal: false | type: bool
+----And | type: bool
+-----And | type: bool
+------Not | type: bool
+-------Equal | type: bool
+--------Literal: true | type: bool
+--------Not | type: bool
+---------Literal: true | type: bool
+------Literal: false | type: bool
+-----Literal: false | type: bool
+---Literal: false | type: bool

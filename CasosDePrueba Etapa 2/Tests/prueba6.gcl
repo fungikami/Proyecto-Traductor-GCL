@@ -3,6 +3,6 @@
     _A : array[0..2]
 
     _A := 1, 2, 4;
-    print "First: " . _A[0] . "\nSecond: " . _A[1] . "\nThird: " . A[2]
+    print "First: " . _A[0] . "\nSecond: " . _A[1] . "\nThird: " . _A[2]
     // Esto es un comentario. Debe ser ignorado.
 ]| 
