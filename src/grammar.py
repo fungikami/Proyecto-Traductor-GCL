@@ -185,7 +185,7 @@ def p_array_access(p):
 # <array_modify> -> <expression>(<expression>:<expression>)
 def p_array_modify(p):
     """array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
-    p[0] = WriteArray(p[1], TwoPoints(p[3], p[5], p.lineno(1), find_column(p.lexer.lexdata, p)), p[1].row, p[1].column)
+    p[0] = WriteArray(p[1], TwoPoints(p[3], p[5], p[1].row, p[1].column), p[1].row, p[1].column)
 
 # --------------------- PRINT ---------------------
 # <print_instruction> -> print <concatenation>
@@ -224,7 +224,7 @@ def p_guards(p):
 # <guard> -> <expression> --> <instructions>
 def p_guard(p):
     """guard : expression TkArrow instructions """
-    p[0] = Then(p[1], p[3], p.lineno(1), find_column(p.lexer.lexdata, p))
+    p[0] = Then(p[1], p[3], p[1].row, p[1].column)
 
 # --------------------- FOR LOOP ---------------------
 # <forLoop> -> for <id> in <expression> to <expression> --> <instructions> rof
