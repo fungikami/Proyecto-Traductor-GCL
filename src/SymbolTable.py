@@ -11,7 +11,7 @@ class SymbolTable:
         self.level = -1
         self.table = {}
 
-    def insert(self, name, type: str, value):
+    def insert(self, name, type: str, value, row, col, readonly=False):
         """ 
             Inserta una variable en la tabla de símbolos, 
             dado su nombre, tipo y valor.
@@ -20,17 +20,17 @@ class SymbolTable:
             self.table[name] = {}
 
         if self.level in self.table[name]:
-            raise Exception(f'Error: Variable "{name}" already declared')
+            raise Exception(f'Error in row {row}, column {col}: Variable "{name}" already declared')
 
-        self.table[name][self.level] = [type, value]
+        self.table[name][self.level] = [type, value, readonly]
 
-    def update(self, name, value):
+    def update(self, name, value, row, col):
         """ Actualiza el valor de una variable en la tabla de símbolos. """
-        var = self.lookup(name)
+        var = self.lookup(name, row, col)
         var[1] = value
         # self.table[name][1] = value
 
-    def lookup(self, name):
+    def lookup(self, name, row, col):
         """ Busca una variable en la tabla de símbolos. """
         lvl = self.level
         while lvl >= 0:
@@ -38,15 +38,19 @@ class SymbolTable:
                 return self.table[name][lvl]
             lvl -= 1
 
-        raise Exception(f'Error: Variable "{name}" not declared')
+        raise Exception(f'Error in row {row}, column {col}: Variable "{name}" not declared')
 
-    def get_type(self, name):
+    def get_type(self, name, row, col):
         """ Obtiene el tipo de una variable en la tabla de símbolos. """
-        return self.lookup(name)[0]
+        return self.lookup(name, row, col)[0]
 
-    def get_value(self, name):
+    def get_value(self, name, row, col):
         """ Obtiene el valor de una variable en la tabla de símbolos. """
-        return self.lookup(name)[1]
+        return self.lookup(name, row, col)[1]
+
+    def is_readonly(self, name, row, col):
+        """ Verifica si una variable es de solo lectura. """
+        return self.lookup(name, row, col)[2]
 
     def exist_name(self, name):
         """ Verifica si una variable existe en la tabla de símbolos. """

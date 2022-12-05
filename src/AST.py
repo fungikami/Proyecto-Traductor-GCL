@@ -9,10 +9,13 @@ from SymbolTable import *
 import sys
 
 class AST:
-    pass
+    def __init__(self, row, column) -> None:
+        self.row = row
+        self.column = column
 
 class Program(AST):
-    def __init__(self, block):
+    def __init__(self, block, row, column) -> None:
+        super().__init__(row, column)
         self.block = block
 
         # Crea una Tabla de Símbolos
@@ -26,7 +29,8 @@ class Program(AST):
 
 # ------------------ BLOCK ------------------
 class Block(AST):
-    def __init__(self, decls, instrs):
+    def __init__(self, decls, instrs, row, column) -> None:
+        super().__init__(row, column)
         self.decls = decls
         self.instrs = instrs
 
@@ -49,7 +53,8 @@ class Block(AST):
 
 # ------------------ DECLARATIONS ------------------
 class Declare(AST):
-    def __init__(self, seq_decls):
+    def __init__(self, seq_decls, row, column) -> None:
+        super().__init__(row, column)
         self.seq_decls = seq_decls
 
     def decorate(self, symTabStack):
@@ -60,7 +65,8 @@ class Declare(AST):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.imprimir(level + 1, True)}'
 
 class Declaration(AST):
-    def __init__(self, idLists, type):
+    def __init__(self, idLists, type, row, column) -> None:
+        super().__init__(row, column)
         self.idLists = idLists
         self.type = type
 
@@ -69,11 +75,11 @@ class Declaration(AST):
         if ARRAY in self.type.name:
             tmp = self.type.name.split('..')
             if tmp[0][-1] > tmp[1][0]:
-                raise Exception(f'Error: El rango del arreglo {self.type.name} es inválido')
+                raise Exception(f'Error in row {self.row}, column {self.column}: El rango del arreglo {self.type.name} es inválido')
 
         # Inserta cada id en la tabla de símbolos
         for id in self.idLists:
-            symTabStack.insert(id.value, self.type.name, None)
+            symTabStack.insert(id.value, self.type.name, None, self.row, self.column)
             id.type = self.type.name
 
     def imprimir(self, level, isDecl = False):
@@ -86,7 +92,8 @@ class Declaration(AST):
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
-    def __init__(self, instr1, instr2):
+    def __init__(self, instr1, instr2, row, column) -> None:
+        super().__init__(row, column)
         self.instr1 = instr1
         self.instr2 = instr2
 
@@ -101,9 +108,9 @@ class Sequencing(AST):
 
 # ------------------ SKIP ------------------
 class Skip(AST):
-    def __init__(self):
-        pass
-
+    def __init__(self, row, column) -> None:
+        super().__init__(row, column)
+        
     def decorate(self, symTabStack):
         pass
 
@@ -112,13 +119,14 @@ class Skip(AST):
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
-    def __init__(self, id, expr):
+    def __init__(self, id, expr, row, column) -> None:
+        super().__init__(row, column)
         self.id = id
         self.expr = expr
 
     def decorate(self, symTabStack):
         # Busca el tipo del id en la tabla de símbolos
-        idType = symTabStack.get_type(self.id.value)
+        idType = symTabStack.get_type(self.id.value, self.row, self.column)
 
         # Decorar la expresión
         self.expr.decorate(symTabStack)
@@ -133,13 +141,18 @@ class Asig(AST):
             arrLength = int(self.expr.type.split('=')[1])
 
             if expectedLength != arrLength:
-                raise Exception(f'Error: El tamaño del arreglo no coincide con el definido')
+                raise Exception(f'Error in row {self.row}, column {self.column}: El tamaño del arreglo no coincide con el definido')
             
         else:
             if idType != self.expr.type:
-                raise Exception(f'Error: El tipo de la expresión no coincide con el tipo del id')
+                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no coincide con el tipo del id')
 
-        symTabStack.update(self.id.value, self.expr.value)
+        # idType = symTabStack.lookup(self.id.value, )[2]
+        is_readonly = symTabStack.is_readonly(self.id.value, self.row, self.column)
+        if is_readonly:
+            raise Exception(f'Error in row {self.row}, column {self.column}: It is changing the variable "{self.id.value}", which is a control variable of a \'for\' statement')
+
+        symTabStack.update(self.id.value, self.expr.value, self.row, self.column)
         # Decorar el id
         self.id.decorate(symTabStack)
 
@@ -147,7 +160,8 @@ class Asig(AST):
         return f'{"-" * level}Asig\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
 
 class Comma(AST):
-    def __init__(self, expr1, expr2):
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
         self.len = 1 + self.expr1.len if isinstance(self.expr1, Comma) else 2
@@ -157,18 +171,19 @@ class Comma(AST):
     def decorate(self, symTabStack):
         self.expr1.decorate(symTabStack)
         if not isinstance(self.expr1, Comma) and self.expr1.type != INT:
-            raise Exception(f'Error: El tipo de la expresión no es int. Expresión: {self.expr1.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no es int. Expresión: {self.expr1.type}')
 
         self.expr2.decorate(symTabStack)
         if self.expr2.type != INT:
-            raise Exception(f'Error: El tipo de la expresión no es int. Expresión: {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no es int. Expresión: {self.expr2.type}')
       
     def imprimir(self, level):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
-    def __init__(self, expr1, expr2, name, expectedType, valueType):
+    def __init__(self, expr1, expr2, name, expectedType, valueType, row, column) -> None:
+        super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
         self.name = name
@@ -184,78 +199,79 @@ class BinOp(AST):
 
             # Verifica que los tipos de las expresiones sean iguales
             if self.expr1.type != self.expr2.type:
-                raise Exception(f'Error: Los tipos de las expresiones no coinciden.')
+                raise Exception(f'Error in row {self.row}, column {self.column}: Los tipos de las expresiones no coinciden.')
 
         else:
             self.expr1.decorate(symTabStack)
             if (self.expr1.type != self.expectedType):
-                raise Exception(f'Error: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr1.type}')
+                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr1.type}')
 
             self.expr2.decorate(symTabStack)
             if (self.expr2.type != self.expectedType):
-                raise Exception(f'Error: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr2.type}')
+                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 class Plus(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Plus', INT, INT)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Plus', INT, INT, row, column)
         self.value = f'{self.expr1.value} + {self.expr2.value}'
 
 class Minus(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Minus', INT, INT)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Minus', INT, INT, row, column)
         self.value = f'{self.expr1.value} - {self.expr2.value}'
 
 class Mult(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Mult', INT, INT)
+    def __init__(self, expr1, expr2m, row, column) -> None:
+        super().__init__(expr1, expr2, 'Mult', INT, INT, row, column)
         self.value = f'{self.expr1.value} * {self.expr2.value}'
 
 class And(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'And', BOOL, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'And', BOOL, BOOL, row, column)
         self.value = f'{self.expr1.value} /\ {self.expr2.value}'
 
 class Or(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Or', BOOL, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Or', BOOL, BOOL, row, column)
         self.value = f'{self.expr1.value} \/ {self.expr2.value}'
 
 class Equal(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Equal', ANY, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Equal', ANY, BOOL, row, column)
         self.value = f'{self.expr1.value} == {self.expr2.value}'
 
 class NEqual(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'NotEqual', ANY, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'NotEqual', ANY, BOOL, row, column)
         self.value = f'{self.expr1.value} != {self.expr2.value}'
 
 class Less(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Less', INT, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Less', INT, BOOL, row, column)
         self.value = f'{self.expr1.value} < {self.expr2.value}'
 
 class Leq(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Leq', INT, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Leq', INT, BOOL, row, column)
         self.value = f'{self.expr1.value} <= {self.expr2.value}'
 
 class Greater(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Greater', INT, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Greater', INT, BOOL, row, column)
         self.value = f'{self.expr1.value} > {self.expr2.value}'
 
 class Geq(BinOp):
-    def __init__(self, expr1, expr2):
-        super().__init__(expr1, expr2, 'Geq', INT, BOOL)
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(expr1, expr2, 'Geq', INT, BOOL, row, column)
         self.value = f'{self.expr1.value} >= {self.expr2.value}'
 
 # ------------------ UNARY OPERATORS ------------------
 class UnaryMinus(AST):
-    def __init__(self, expr):
+    def __init__(self, expr, row, column) -> None:
+        super().__init__(row, column)
         self.expr = expr
         self.type = INT
         self.value = f'-{self.expr.value}'
@@ -263,7 +279,7 @@ class UnaryMinus(AST):
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
 
     def __str__(self):
         return f'-{self.expr}'
@@ -272,7 +288,8 @@ class UnaryMinus(AST):
         return f'{"-" * level}Minus | type: {self.type}\n{self.expr.imprimir(level + 1)}'
 
 class Not(AST):
-    def __init__(self, expr):
+    def __init__(self, expr, row, column) -> None:
+        super().__init__(row, column)
         self.expr = expr
         self.type = BOOL
         self.value = f'!{self.expr.value}'
@@ -280,14 +297,15 @@ class Not(AST):
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
         if self.expr.type != BOOL:
-            raise Exception(f'Error: El tipo de la expresión esperado es {BOOL}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {BOOL}, pero se obtuvo {self.expr.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.imprimir(level + 1)}'
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):
-    def __init__(self, id, expr):
+    def __init__(self, id, expr, row, column) -> None:
+        super().__init__(row, column)
         self.id = id
         self.expr = expr
         # Como solo hay arreglos de enteros leer un arreglo siempre deberia dar un entero
@@ -305,7 +323,7 @@ class ReadArray(AST):
 
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
         # No se si deberiamos verificar que el valor de expr este en el rango del arreglo
         # self.type = symTabStack[-1].get_type(self.id.value)
 
@@ -313,7 +331,8 @@ class ReadArray(AST):
         return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
 
 class WriteArray(AST):
-    def __init__(self, id, expr):
+    def __init__(self, id, expr, row, column) -> None:
+        super().__init__(row, column)
         self.id = id
         self.expr = expr
         self.value = f'{id}({expr.value})'
@@ -328,13 +347,14 @@ class WriteArray(AST):
         self.expr.decorate(symTabStack)
 
         if self.expr.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}WriteArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
 
 class TwoPoints(AST):
-    def __init__(self, expr1, expr2):
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
         self.value = f'{expr1}:{expr2}'
@@ -343,14 +363,15 @@ class TwoPoints(AST):
         self.expr1.decorate(symTabStack)
         self.expr2.decorate(symTabStack)
         if self.expr1.type != INT or self.expr2.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}TwoPoints\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 # ------------------ PRINT ------------------
 class Print(AST):
-    def __init__(self, expr):
+    def __init__(self, expr, row, column) -> None:
+        super().__init__(row, column)
         self.expr = expr
 
     def decorate(self, symTabStack):
@@ -361,7 +382,8 @@ class Print(AST):
 
 # ------------------ CONCAT ------------------
 class Concat(AST):
-    def __init__(self, expr1, expr2):
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
         self.type = STR
@@ -374,7 +396,8 @@ class Concat(AST):
 
 # ------------------ IF ------------------
 class If(AST):
-    def __init__(self, guards):
+    def __init__(self, guards, row, column) -> None:
+        super().__init__(row, column)
         self.guards = guards
 
     def decorate(self, symTabStack):
@@ -384,7 +407,8 @@ class If(AST):
         return f'{"-" * level}If\n{self.guards.imprimir(level + 1)}'
 
 class Guard(AST):
-    def __init__(self, guards, guard):
+    def __init__(self, guards, guard, row, column) -> None:
+        super().__init__(row, column)
         self.guards = guards
         self.guard = guard
 
@@ -396,7 +420,8 @@ class Guard(AST):
         return f'{"-" * level}Guard\n{self.guards.imprimir(level + 1)}\n{self.guard.imprimir(level + 1)}'
 
 class Then(AST):
-    def __init__(self, expr, stmts):
+    def __init__(self, expr, stmts, row, column) -> None:
+        super().__init__(row, column)
         self.expr = expr
         self.stmts = stmts
 
@@ -409,11 +434,13 @@ class Then(AST):
 
 # ------------------ FOR LOOP ------------------
 class For(AST):
-    def __init__(self, range, instr):
+    def __init__(self, range, instr, row, column) -> None:
+        super().__init__(row, column)
         self.range = range
         self.instr = instr
 
     def decorate(self, symTabStack):
+        symTabStack.open_scope()
         self.range.decorate(symTabStack)
         self.instr.decorate(symTabStack)
 
@@ -421,18 +448,22 @@ class For(AST):
         return f'{"-" * level}For\n{self.range.imprimir(level + 1)}\n{self.instr.imprimir(level + 1)}'
 
 class In(AST):
-    def __init__(self, id, range):
+    def __init__(self, id, range, row, column) -> None:
+        super().__init__(row, column)
         self.id = id
         self.range = range
 
     def decorate(self, symTabStack):
+        symTabStack.insert(self.id.value, INT, self.range.expr1.value, self.row, self.column, True)
+        self.id.decorate(symTabStack)
         self.range.decorate(symTabStack)
 
     def imprimir(self, level):
         return f'{"-" * level}In\n{self.id.imprimir(level + 1)}\n{self.range.imprimir(level + 1)}'
 
 class To(AST):
-    def __init__(self, expr1, expr2):
+    def __init__(self, expr1, expr2, row, column) -> None:
+        super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
 
@@ -440,14 +471,15 @@ class To(AST):
         self.expr1.decorate(symTabStack)
         self.expr2.decorate(symTabStack)
         if self.expr1.type != INT or self.expr2.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}To\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
 
 # ------------------ DO LOOP ------------------
 class Do(AST):
-    def __init__(self, stmts):
+    def __init__(self, stmts, row, column) -> None:
+        super().__init__(row, column)
         self.stmts = stmts
 
     def decorate(self, symTabStack):
@@ -458,7 +490,8 @@ class Do(AST):
 
 # ------------------ TYPES ------------------
 class Type(AST):
-    def __init__(self, name):
+    def __init__(self, name, row, column) -> None:
+        super().__init__(row, column)
         self.name = name
 
     def __str__(self):
@@ -471,7 +504,8 @@ class Type(AST):
     #     return f'{"-" * level}Type\n{self.type}'
 
 class ArrayType(AST):
-    def __init__(self, start, end):
+    def __init__(self, start, end, row, column) -> None:
+        super().__init__(row, column)
         self.start = start
         self.end = end
         self.name = f'{ARRAY}[{self.start}..{self.end}]'
@@ -482,11 +516,11 @@ class ArrayType(AST):
     def decorate(self, symTabStack):
         self.start.decorate(symTabStack)
         if self.start.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.start.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.start.type}')
 
         self.end.decorate(symTabStack)
         if self.end.type != INT:
-            raise Exception(f'Error: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.end.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.end.type}')
 
     # def imprimir(self, level):
     #     print("-" * level + "ArrayType")
@@ -495,7 +529,8 @@ class ArrayType(AST):
 
 # ------------------ TERMINALS ------------------
 class Id(AST):
-    def __init__(self, value):
+    def __init__(self, value, row, column) -> None:
+        super().__init__(row, column)
         self.value = value
         self.type = None
         self.idValue = None
@@ -505,17 +540,18 @@ class Id(AST):
 
     def decorate(self, symTabStack):
         # Obtener el tope de la pila de tablas de símbolos
-        self.type = symTabStack.get_type(self.value)
+        self.type = symTabStack.get_type(self.value, self.row, self.column)
 
-        # self.idValue = symTabStack.get_value(self.value)
-        # if self.idValue == None:
-        #     raise Exception(f'Error: El identificador \'{self.value}\' no esta inicializado')
+        self.idValue = symTabStack.get_value(self.value, self.row, self.column)
+        if self.idValue == None:
+            raise Exception(f'Error in row {self.row}, column {self.column}: El identificador \'{self.value}\' no esta inicializado')
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
 
 class Number(AST):
-    def __init__(self, value):
+    def __init__(self, value, row, column) -> None:
+        super().__init__(row, column)
         self.value = value
         self.type = INT
 
@@ -529,7 +565,8 @@ class Number(AST):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
 class Boolean(AST):
-    def __init__(self, value):
+    def __init__(self, value, row, column) -> None:
+        super().__init__(row, column)
         self.value = value
         self.type = BOOL
 
@@ -543,7 +580,8 @@ class Boolean(AST):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
 class String(AST):
-    def __init__(self, value):
+    def __init__(self, value, row, column) -> None:
+        super().__init__(row, column)
         self.value = value
         self.type = STR
 
