@@ -1,0 +1,21 @@
+|[
+  declare
+    x, y, p : int;
+    z : array[2..3]
+  x := 1;
+  y := 3;
+  z := x, y;
+  if x == y -->
+    x := z[y] + 1
+  [] x != y -->
+    |[
+      declare
+        x : int;
+        z : int;
+        q : array[2..4];
+        x : int
+      z := y-x+1;
+      print z
+    ]|
+  fi
+]|

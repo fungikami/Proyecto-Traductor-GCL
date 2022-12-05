@@ -75,7 +75,7 @@ class Declaration(AST):
         if ARRAY in self.type.name:
             tmp = self.type.name.split('..')
             if tmp[0][-1] > tmp[1][0]:
-                raise Exception(f'Error in row {self.row}, column {self.column}: El rango del arreglo {self.type.name} es inválido')
+                raise Exception(f'Error in row {self.row}, column {self.column}: {self.type.name} does not have a valid size')
 
         # Inserta cada id en la tabla de símbolos
         for id in self.idLists:
@@ -141,11 +141,11 @@ class Asig(AST):
             arrLength = int(self.expr.type.split('=')[1])
 
             if expectedLength != arrLength:
-                raise Exception(f'Error in row {self.row}, column {self.column}: El tamaño del arreglo no coincide con el definido')
+                raise Exception(f'Error in row {self.row}, column {self.column}: {self.id.value} does not have the same size defined in the declaration')
             
         else:
             if idType != self.expr.type:
-                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no coincide con el tipo del id')
+                raise Exception(f'Error in row {self.row}, column {self.column}: {self.id.value} is not of type {self.expr.type}')
 
         # idType = symTabStack.lookup(self.id.value, )[2]
         is_readonly = symTabStack.is_readonly(self.id.value, self.row, self.column)
@@ -171,11 +171,11 @@ class Comma(AST):
     def decorate(self, symTabStack):
         self.expr1.decorate(symTabStack)
         if not isinstance(self.expr1, Comma) and self.expr1.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no es int. Expresión: {self.expr1.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: {self.expr1.value} is not of type {INT}')
 
         self.expr2.decorate(symTabStack)
         if self.expr2.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión no es int. Expresión: {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: {self.expr2.value} is not of type {INT}')
       
     def imprimir(self, level):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -199,16 +199,16 @@ class BinOp(AST):
 
             # Verifica que los tipos de las expresiones sean iguales
             if self.expr1.type != self.expr2.type:
-                raise Exception(f'Error in row {self.row}, column {self.column}: Los tipos de las expresiones no coinciden.')
+                raise Exception(f'Error in row {self.row}, column {self.column}: {self.expr1.value} and {self.expr2.value} are not of the same type')
 
         else:
             self.expr1.decorate(symTabStack)
             if (self.expr1.type != self.expectedType):
-                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr1.type}')
+                raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr1.value} is {self.expectedType} but is {self.expr1.type}')
 
             self.expr2.decorate(symTabStack)
             if (self.expr2.type != self.expectedType):
-                raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {self.expectedType}, pero se obtuvo {self.expr2.type}')
+                raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr2.value} is {self.expectedType} but is {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -279,7 +279,7 @@ class UnaryMinus(AST):
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {INT} but is {self.expr.type}')
 
     def __str__(self):
         return f'-{self.expr}'
@@ -297,7 +297,7 @@ class Not(AST):
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
         if self.expr.type != BOOL:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {BOOL}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {BOOL} but is {self.expr.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.imprimir(level + 1)}'
@@ -315,14 +315,14 @@ class ReadArray(AST):
     def decorate(self, symTabStack):
         value = symTabStack.get_value(self.id.value, self.row, self.column) 
         if value is None:
-            raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+            raise Exception(f'Error in row {self.row}, column {self.column}: Array {self.id.value} not initialized')
 
         # Decorar id
         self.id.decorate(symTabStack)
 
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {INT} but is {self.expr.type}')
         # No se si deberiamos verificar que el valor de expr este en el rango del arreglo
         # self.type = symTabStack[-1].get_type(self.id.value)
 
@@ -346,7 +346,7 @@ class WriteArray(AST):
         self.expr.decorate(symTabStack)
 
         if self.expr.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {INT} but is {self.expr.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}WriteArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -362,7 +362,7 @@ class TwoPoints(AST):
         self.expr1.decorate(symTabStack)
         self.expr2.decorate(symTabStack)
         if self.expr1.type != INT or self.expr2.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr1.value} and {self.expr2.value} is {INT} but is {self.expr1.type} and {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}TwoPoints\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -471,7 +471,7 @@ class To(AST):
         self.expr1.decorate(symTabStack)
         self.expr2.decorate(symTabStack)
         if self.expr1.type != INT or self.expr2.type != INT:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.expr1.type} y {self.expr2.type}')
+            raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr1.value} and {self.expr2.value} is {INT} but is {self.expr1.type} and {self.expr2.type}')
 
     def imprimir(self, level):
         return f'{"-" * level}To\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
@@ -539,12 +539,12 @@ class Id(AST):
         return f'{self.value}'
 
     def decorate(self, symTabStack):
-        # Obtener el tope de la pila de tablas de símbolos
         self.type = symTabStack.get_type(self.value, self.row, self.column)
 
         self.idValue = symTabStack.get_value(self.value, self.row, self.column)
+        
         if self.idValue == None:
-            raise Exception(f'Error in row {self.row}, column {self.column}: El identificador \'{self.value}\' no esta inicializado')
+            raise Exception(f'Error in row {self.row}, column {self.column}: Variable {self.value} not initialized')
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'

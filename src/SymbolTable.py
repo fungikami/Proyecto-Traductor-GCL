@@ -5,6 +5,18 @@
     Fecha: 05/12/2022
 """
 
+class SymbolVar:
+    """ Clase que implementa una variable en la tabla de símbolos. """
+    def __init__(self, name, type: str, value, readonly=False):
+        self.name = name
+        self.type = type
+        self.value = value
+        self.readonly = readonly
+
+    def __str__(self):
+        """ Representación de una variable. """
+        return f'variable: {self.name} | type: {self.type}'
+
 class SymbolTable:
     """ Clase que implementa la tabla de símbolos del intérprete de GCL. """
     def __init__(self):
@@ -22,13 +34,15 @@ class SymbolTable:
         if self.level in self.table[name]:
             raise Exception(f'Error in row {row}, column {col}: Variable "{name}" already declared')
 
-        self.table[name][self.level] = [type, value, readonly]
+        self.table[name][self.level] = SymbolVar(name, type, value, readonly)
 
     def update(self, name, value, row, col):
         """ Actualiza el valor de una variable en la tabla de símbolos. """
         var = self.lookup(name, row, col)
-        var[1] = value
-        # self.table[name][1] = value
+        if var.readonly:
+            raise Exception(f'Error in row {row}, column {col}: Variable "{name}" is readonly')
+
+        var.value = value
 
     def lookup(self, name, row, col):
         """ Busca una variable en la tabla de símbolos. """
@@ -42,15 +56,15 @@ class SymbolTable:
 
     def get_type(self, name, row, col):
         """ Obtiene el tipo de una variable en la tabla de símbolos. """
-        return self.lookup(name, row, col)[0]
+        return self.lookup(name, row, col).type
 
     def get_value(self, name, row, col):
         """ Obtiene el valor de una variable en la tabla de símbolos. """
-        return self.lookup(name, row, col)[1]
+        return self.lookup(name, row, col).value
 
     def is_readonly(self, name, row, col):
         """ Verifica si una variable es de solo lectura. """
-        return self.lookup(name, row, col)[2]
+        return self.lookup(name, row, col).readonly
 
     def exist_name(self, name):
         """ Verifica si una variable existe en la tabla de símbolos. """

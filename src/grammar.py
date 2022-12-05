@@ -179,13 +179,13 @@ def p_terminal_expression(p):
 # <array_access> -> <expression>[<expression>]
 def p_array_access(p):
     """array_access : expression TkOBracket expression TkCBracket"""
-    p[0] = ReadArray(p[1], p[3], p.lineno(1), find_column(p.lexer.lexdata, p))
+    p[0] = ReadArray(p[1], p[3], p[1].row, p[1].column)
 
 # Modificación de un elemento de un arreglo
 # <array_modify> -> <expression>(<expression>:<expression>)
 def p_array_modify(p):
     """array_modify : expression TkOpenPar expression TkTwoPoints expression TkClosePar"""
-    p[0] = WriteArray(p[1], TwoPoints(p[3], p[5], p.lineno(1), find_column(p.lexer.lexdata, p)), p.lineno(1), find_column(p.lexer.lexdata, p))
+    p[0] = WriteArray(p[1], TwoPoints(p[3], p[5], p.lineno(1), find_column(p.lexer.lexdata, p)), p[1].row, p[1].column)
 
 # --------------------- PRINT ---------------------
 # <print_instruction> -> print <concatenation>
