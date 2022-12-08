@@ -84,4 +84,3 @@ class SymbolTable:
     def __str__(self):
         """ Representación de la tabla de símbolos. """
         return str(self.table)
-

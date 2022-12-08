@@ -314,8 +314,8 @@ class ReadArray(AST):
 
     def decorate(self, symTabStack):
         value = symTabStack.get_value(self.id.value, self.row, self.column) 
-        if value is None:
-            raise Exception(f'Error in row {self.row}, column {self.column}: Array {self.id.value} not initialized')
+        # if value is None:
+        #     raise Exception(f'Error in row {self.row}, column {self.column}: Array {self.id.value} not initialized')
 
         # Decorar id
         self.id.decorate(symTabStack)
@@ -323,8 +323,8 @@ class ReadArray(AST):
         self.expr.decorate(symTabStack)
         if self.expr.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {INT} but is {self.expr.type}')
-        # No se si deberiamos verificar que el valor de expr este en el rango del arreglo
-        # self.type = symTabStack[-1].get_type(self.id.value)
+        
+        # Verificar que el valor de expr este en el rango del arreglo
 
     def imprimir(self, level):
         return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
@@ -340,7 +340,7 @@ class WriteArray(AST):
         # if isinstance(self.id, Id):
         #     value = symTabStack.get_value(self.id.value) 
         #     if value is None:
-        #         raise Exception(f'Error: El arreglo {self.id.value} no ha sido inicializado')
+        #         raise Exception(f'Error in row {self.row}, column {self.column}: Array {self.id.value} not initialized')
         
         self.id.decorate(symTabStack)
         self.expr.decorate(symTabStack)
@@ -543,8 +543,8 @@ class Id(AST):
 
         self.idValue = symTabStack.get_value(self.value, self.row, self.column)
         
-        if self.idValue == None:
-            raise Exception(f'Error in row {self.row}, column {self.column}: Variable {self.value} not initialized')
+        # if self.idValue == None:
+        #     raise Exception(f'Error in row {self.row}, column {self.column}: Variable {self.value} not initialized')
 
     def imprimir(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
@@ -600,6 +600,4 @@ INT = 'int'
 BOOL = 'bool'
 STR = 'str'
 ARRAY = 'array'
-
-# ANY es que puede ser entero o booleano
-ANY = 'any'
+ANY = 'any'     # ANY es que puede ser entero o booleano

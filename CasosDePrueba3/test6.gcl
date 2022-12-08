@@ -1,0 +1,11 @@
+|[
+  declare
+    a, b, i: int;
+    bo: bool
+    
+    do i <= 5 -->
+       a := b+1;
+       bo := a == b 
+    od
+    // Esto es un comentario. Debe ser ignorado.
+]| 
