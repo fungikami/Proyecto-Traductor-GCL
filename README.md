@@ -15,3 +15,11 @@
 ```
     python3 gcl.py <programa.gcl>
 ```
+
+# Etapa 3:
+ Implementacion de un análisis de contexto sobre programas en GCL.
+
+ ## Ejecutar Programa
+```
+    python3 gcl.py <programa.gcl>
+```
