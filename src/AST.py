@@ -136,7 +136,7 @@ class Sequencing(AST):
             inst1 = self.instr1.printPreApp(esp)
             inst2 = self.instr2.printPreApp(esp)
 
-            # MODIFICAR,HAY QUE COMPONER LOS PI EN CASO DE SER BLOQUES ANIDADOS
+            # MODIFICAR, HAY QUE COMPONER LOS PI EN CASO DE SER BLOQUES ANIDADOS
             return f'({CIRC} {inst2} {inst1})'
 
 # ------------------ SKIP ------------------
@@ -151,7 +151,7 @@ class Skip(AST):
         return f'{"-" * level}skip'
 
     def printPreApp(self, esp):
-        # Unir los estados Esp con {abort}
+        # Unir los estados Esp con {abort} para tener Esp'
         abort = f'({SET2} {ABORT})'
         espPrima = f'({CUP} {abort} {crossProduct(esp)})'
 
@@ -201,8 +201,8 @@ class Asig(AST):
         return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        range = f''
-        return f'{esp}'
+        range = crossProductRange(esp)
+        return f'{range}'
 
 class Comma(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -230,7 +230,7 @@ class Comma(AST):
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
-    def __init__(self, expr1, expr2, name, expectedType, valueType, row, column) -> None:
+    def __init__(self, expr1, expr2, name, expectedType, valueType, idPreApp, row, column) -> None:
         super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
@@ -262,61 +262,61 @@ class BinOp(AST):
         return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self):
-        return f'to-do' 
+        return f'({idPreApp} {self.expr1.printPreApp()} {self.expr2.printPreApp()})'
 
 class Plus(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Plus', INT, INT, row, column)
+        super().__init__(expr1, expr2, 'Plus', INT, INT, PLUS, row, column)
         self.value = f'{self.expr1.value} + {self.expr2.value}'
 
 class Minus(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Minus', INT, INT, row, column)
+        super().__init__(expr1, expr2, 'Minus', INT, INT, MINUS, row, column)
         self.value = f'{self.expr1.value} - {self.expr2.value}'
 
 class Mult(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Mult', INT, INT, row, column)
+        super().__init__(expr1, expr2, 'Mult', INT, INT, TIMES, row, column)
         self.value = f'{self.expr1.value} * {self.expr2.value}'
 
 class And(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'And', BOOL, BOOL, row, column)
+        super().__init__(expr1, expr2, 'And', BOOL, BOOL, AND, row, column)
         self.value = f'{self.expr1.value} /\ {self.expr2.value}'
 
 class Or(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Or', BOOL, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Or', BOOL, BOOL, OR, row, column)
         self.value = f'{self.expr1.value} \/ {self.expr2.value}'
 
 class Equal(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Equal', ANY, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Equal', ANY, BOOL, EQUIV, row, column)
         self.value = f'{self.expr1.value} == {self.expr2.value}'
 
 class NEqual(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'NotEqual', ANY, BOOL, row, column)
+        super().__init__(expr1, expr2, 'NotEqual', ANY, BOOL, NOTEQUIV, row, column)
         self.value = f'{self.expr1.value} != {self.expr2.value}'
 
 class Less(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Less', INT, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Less', INT, BOOL, LESS, row, column)
         self.value = f'{self.expr1.value} < {self.expr2.value}'
 
 class Leq(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Leq', INT, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Leq', INT, BOOL, LEQ, row, column)
         self.value = f'{self.expr1.value} <= {self.expr2.value}'
 
 class Greater(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Greater', INT, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Greater', INT, BOOL, GREATER, row, column)
         self.value = f'{self.expr1.value} > {self.expr2.value}'
 
 class Geq(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
-        super().__init__(expr1, expr2, 'Geq', INT, BOOL, row, column)
+        super().__init__(expr1, expr2, 'Geq', INT, BOOL, GEQ, row, column)
         self.value = f'{self.expr1.value} >= {self.expr2.value}'
 
 # ------------------ UNARY OPERATORS ------------------
@@ -339,7 +339,7 @@ class UnaryMinus(AST):
         return f'{"-" * level}Minus | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self):
-        return f'to-do' 
+        return f'({UNARYMINUS} {self.expr.printPreApp()})'
 
 class Not(AST):
     def __init__(self, expr, row, column) -> None:
@@ -357,7 +357,7 @@ class Not(AST):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self):
-        return f'to-do' 
+        return f'({NOT} {self.expr.printPreApp()})'
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):

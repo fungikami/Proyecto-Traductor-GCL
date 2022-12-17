@@ -15,6 +15,11 @@ def crossProduct(list):
     else:
         return f'({CROSSPROD} {crossProduct(list[1:])} {list[0]})'
 
+def crossProductRange(list):
+    ''' Devuelve un string de la forma (T1 x ...) x (T3 x ...) '''
+    cp = crossProduct(list)
+    return f'{CROSSPROD} {cp} {cp}'
+
 def compose(list):
     ''' Devuelve un string de la forma T1 o (T2 o (T3 o ...)) '''
     if len(list) == 1:
