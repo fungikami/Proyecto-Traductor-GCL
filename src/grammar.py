@@ -98,7 +98,7 @@ def p_instruction(p):
                    | for
                    | do
                    | block"""
-    p[0] = Skip() if p[1] == 'skip' else p[1]
+    p[0] = Skip(p.lineno(1), find_column(p.lexer.lexdata, p)) if p[1] == 'skip' else p[1]
 
 # --------------------- ASSIGNMENT ---------------------
 # <assignment> -> <id> := <expression>

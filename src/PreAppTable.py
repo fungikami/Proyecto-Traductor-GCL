@@ -31,8 +31,8 @@ SET2        = 'c_{20}'  # Conjunto con un elemento
 
 COMMA       = 'c_{21}'  # ,
 BIGCUP      = 'c_{22}'  # Union
-CUP         = 'c_{23}'  # Union
-BIGCAP      = 'c_{24}'  # Interseccion
+BIGCAP      = 'c_{23}'  # Interseccion
+CUP         = 'c_{24}'  # Union
 CAP         = 'c_{25}'  # Interseccion
 SUBSET      = 'c_{26}'  # Subconjunto (sin igual)
 SUBSETEQ    = 'c_{27}'  # Subconjunto (con igual)
@@ -41,7 +41,7 @@ SUPSETEQ    = 'c_{29}'  # Superconjunto (con igual)
 SETMINUS    = 'c_{30}'  # Diferencia
 
 TUPLE       = 'c_{31}'  # Tupla 
-TUPLE1      = 'c_{32}'  # NO SE COMO LLAMAR ESTO
+CROSSPROD   = 'c_{32}'  # Producto cruz
 
 PAREN       = 'c_{33}'  # Parentesis
 CIRC        = 'c_{34}'  # Composicion
@@ -49,7 +49,7 @@ POWERSET    = 'c_{35}'  # Conjunto de partes
 INTSET      = 'c_{36}'  # Conjunto de enteros
 BOOLSET     = 'c_{37}'  # Conjunto de booleanos
 SUPERSCRIPT = 'c_{38}'  # Superindice
-SUBSCRIPT   = 'c_{39}'  # Subindice
+IDENTITY    = 'c_{39}'  # Función identi
 ABORT       = 'c_{40}'  # Abort
 
 SUPERE      = 'c_{41}'  # Elevado a la epsilon (NO SE COMO LLAMAR ESTO)
@@ -86,7 +86,15 @@ GEQ         = 'c_{66}'  # >=
 
 PI          = 'c_{67}'  # Pi
 
-INT = {
+# ---------------------------------------------------------------------------
+# Alias para tipos de datos
+INT = 'int'
+BOOL = 'bool'
+STR = 'str'
+ARRAY = 'array'
+ANY = 'any'     # ANY es que puede ser entero o booleano
+
+INTDICT = {
     0: ZERO,
     1: ONE,
     2: TWO,
@@ -97,4 +105,9 @@ INT = {
     7: SEVEN,
     8: EIGHT,
     9: NINE
+}
+
+TYPEDICT = {
+    INT: INTSET,
+    BOOL: BOOLSET,
 }

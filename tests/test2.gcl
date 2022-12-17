@@ -1,0 +1,12 @@
+|[
+    declare
+        x : int
+
+    x := 123;
+    |[
+        declare
+            y : bool
+ 
+        y := true /\ false
+    ]|
+]|

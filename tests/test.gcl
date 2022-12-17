@@ -1,0 +1,12 @@
+|[
+    declare
+        x : int;
+        y : bool
+
+    skip;
+    |[
+        declare 
+            z : int
+        skip
+    ]|
+]|

@@ -6,6 +6,8 @@
 """
 
 from SymbolTable import *
+from PreAppTable import *
+from utilities import *
 import sys
 
 class AST:
@@ -54,8 +56,10 @@ class Block(AST):
         else:
             return f'{"-" * level}Block\n{self.instrs.printAST(level + 1)}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp=[]):
+        # ARREGLAR PARA QUE SOLO TOME EL ESP DEL BLOQUE ACTUAL Y PADRES
+        esp += self.decls.printPreApp()
+        return f'{self.instrs.printPreApp(esp)}'
 
 # ------------------ DECLARATIONS ------------------
 class Declare(AST):
@@ -70,8 +74,8 @@ class Declare(AST):
     def printAST(self, level):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.printAST(level + 1, True)}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp=[]):
+        return self.seq_decls.printPreApp(esp, True)
 
 class Declaration(AST):
     def __init__(self, idLists, type, row, column) -> None:
@@ -93,14 +97,17 @@ class Declaration(AST):
 
     def printAST(self, level, isDecl = False):
         # Convierte la lista de id's en un string
-        # idList = ', '.join([str(id) for id in self.idLists])
         result = ''
         for id in self.idLists:
             result += f'{"-" * level}variable: {id.value} | type: {self.type.name}\n'
         return result.rstrip()
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp, isDecl):
+        copyEsp = esp.copy()
+        # Agrega a la lista de esp los tipos de cada id
+        for id in self.idLists:
+            copyEsp.append(TYPEDICT[self.type.name])
+        return copyEsp
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -118,13 +125,24 @@ class Sequencing(AST):
             return f'{self.instr1.printAST(level, True)}\n{self.instr2.printAST(level, True)}'
         return f'{"-" * level}Sequencing\n{self.instr1.printAST(level + 1)}\n{self.instr2.printAST(level + 1)}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp, isDecl = False):
+        if isDecl:
+            esp1 = self.instr1.printPreApp(esp, True)
+            esp2 = self.instr2.printPreApp(esp1, True)
+            return esp2
+
+        # Composición de la sem de cada instrucción
+        else:
+            inst1 = self.instr1.printPreApp(esp)
+            inst2 = self.instr2.printPreApp(esp)
+
+            # MODIFICAR,HAY QUE COMPONER LOS PI EN CASO DE SER BLOQUES ANIDADOS
+            return f'({CIRC} {inst2} {inst1})'
 
 # ------------------ SKIP ------------------
 class Skip(AST):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, row, column) -> None:
+        super().__init__(row, column)
         
     def decorate(self, symTabStack):
         pass
@@ -132,8 +150,13 @@ class Skip(AST):
     def printAST(self, level):
         return f'{"-" * level}skip'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp):
+        # Unir los estados Esp con {abort}
+        abort = f'({SET2} {ABORT})'
+        espPrima = f'({CUP} {abort} {crossProduct(esp)})'
+
+        # Retorna la función identidad
+        return f'({IDENTITY} {espPrima})'
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
@@ -177,8 +200,9 @@ class Asig(AST):
     def printAST(self, level):
         return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp):
+        range = f''
+        return f'{esp}'
 
 class Comma(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -680,11 +704,3 @@ class String(AST):
 
     def printPreApp(self):
         return f'to-do' 
-
-
-# Alias para tipos de datos
-INT = 'int'
-BOOL = 'bool'
-STR = 'str'
-ARRAY = 'array'
-ANY = 'any'     # ANY es que puede ser entero o booleano

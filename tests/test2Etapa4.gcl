@@ -1,0 +1,9 @@
+|[
+  declare
+   x : int
+ |[
+   declare 
+      x, y : int;
+   x:=y+89
+  ]|;
+]|
