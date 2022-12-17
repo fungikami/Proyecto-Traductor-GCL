@@ -24,8 +24,11 @@ class Program(AST):
     def decorate(self):
         self.block.decorate(self.symTabStack)
 
-    def imprimir(self, level):
-        return self.block.imprimir(level)
+    def printAST(self, level):
+        return self.block.printAST(level)
+
+    def printPreApp(self):
+        return self.block.printPreApp()
 
 # ------------------ BLOCK ------------------
 class Block(AST):
@@ -45,11 +48,14 @@ class Block(AST):
         # Desempila la Tabla de Símbolos
         symTabStack.close_scope()
 
-    def imprimir(self, level):
+    def printAST(self, level):
         if (self.decls.seq_decls):
-            return f'{"-" * level}Block\n{self.decls.imprimir(level + 1)}\n{self.instrs.imprimir(level + 1)}'
+            return f'{"-" * level}Block\n{self.decls.printAST(level + 1)}\n{self.instrs.printAST(level + 1)}'
         else:
-            return f'{"-" * level}Block\n{self.instrs.imprimir(level + 1)}'
+            return f'{"-" * level}Block\n{self.instrs.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ DECLARATIONS ------------------
 class Declare(AST):
@@ -61,8 +67,11 @@ class Declare(AST):
         if self.seq_decls:
             self.seq_decls.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Symbols Table\n{self.seq_decls.imprimir(level + 1, True)}'
+    def printAST(self, level):
+        return f'{"-" * level}Symbols Table\n{self.seq_decls.printAST(level + 1, True)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Declaration(AST):
     def __init__(self, idLists, type, row, column) -> None:
@@ -82,13 +91,16 @@ class Declaration(AST):
             symTabStack.insert(id.value, self.type.name, None, self.row, self.column)
             id.type = self.type.name
 
-    def imprimir(self, level, isDecl = False):
+    def printAST(self, level, isDecl = False):
         # Convierte la lista de id's en un string
         # idList = ', '.join([str(id) for id in self.idLists])
         result = ''
         for id in self.idLists:
             result += f'{"-" * level}variable: {id.value} | type: {self.type.name}\n'
         return result.rstrip()
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -101,10 +113,13 @@ class Sequencing(AST):
         self.instr1.decorate(symTabStack)
         self.instr2.decorate(symTabStack)
 
-    def imprimir(self, level, isDecl = False):
+    def printAST(self, level, isDecl = False):
         if isDecl:
-            return f'{self.instr1.imprimir(level, True)}\n{self.instr2.imprimir(level, True)}'
-        return f'{"-" * level}Sequencing\n{self.instr1.imprimir(level + 1)}\n{self.instr2.imprimir(level + 1)}'
+            return f'{self.instr1.printAST(level, True)}\n{self.instr2.printAST(level, True)}'
+        return f'{"-" * level}Sequencing\n{self.instr1.printAST(level + 1)}\n{self.instr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ SKIP ------------------
 class Skip(AST):
@@ -114,8 +129,11 @@ class Skip(AST):
     def decorate(self, symTabStack):
         pass
 
-    def imprimir(self, level):
+    def printAST(self, level):
         return f'{"-" * level}skip'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
@@ -156,8 +174,11 @@ class Asig(AST):
         # Decorar el id
         self.id.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Asig\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Comma(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -177,8 +198,11 @@ class Comma(AST):
         if self.expr2.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: {self.expr2.value} is not of type {INT}')
       
-    def imprimir(self, level):
-        return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
@@ -210,8 +234,11 @@ class BinOp(AST):
             if (self.expr2.type != self.expectedType):
                 raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr2.value} is {self.expectedType} but is {self.expr2.type}')
 
-    def imprimir(self, level):
-        return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Plus(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -284,8 +311,11 @@ class UnaryMinus(AST):
     def __str__(self):
         return f'-{self.expr}'
 
-    def imprimir(self, level):
-        return f'{"-" * level}Minus | type: {self.type}\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Minus | type: {self.type}\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Not(AST):
     def __init__(self, expr, row, column) -> None:
@@ -299,8 +329,11 @@ class Not(AST):
         if self.expr.type != BOOL:
             raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {BOOL} but is {self.expr.type}')
 
-    def imprimir(self, level):
-        return f'{"-" * level}Not | type: {self.type}\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Not | type: {self.type}\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):
@@ -326,8 +359,11 @@ class ReadArray(AST):
         
         # Verificar que el valor de expr este en el rango del arreglo
 
-    def imprimir(self, level):
-        return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class WriteArray(AST):
     def __init__(self, id, expr, row, column) -> None:
@@ -348,8 +384,11 @@ class WriteArray(AST):
         if self.expr.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr.value} is {INT} but is {self.expr.type}')
 
-    def imprimir(self, level):
-        return f'{"-" * level}WriteArray\n{self.id.imprimir(level + 1)}\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}WriteArray\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class TwoPoints(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -364,8 +403,11 @@ class TwoPoints(AST):
         if self.expr1.type != INT or self.expr2.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr1.value} and {self.expr2.value} is {INT} but is {self.expr1.type} and {self.expr2.type}')
 
-    def imprimir(self, level):
-        return f'{"-" * level}TwoPoints\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}TwoPoints\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ PRINT ------------------
 class Print(AST):
@@ -376,8 +418,11 @@ class Print(AST):
     def decorate(self, symTabStack):
         self.expr.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Print\n{self.expr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Print\n{self.expr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ CONCAT ------------------
 class Concat(AST):
@@ -391,8 +436,11 @@ class Concat(AST):
         self.expr1.decorate(symTabStack)
         self.expr2.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Concat\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Concat\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ IF ------------------
 class If(AST):
@@ -403,8 +451,11 @@ class If(AST):
     def decorate(self, symTabStack):
         self.guards.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}If\n{self.guards.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}If\n{self.guards.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Guard(AST):
     def __init__(self, guards, guard, row, column) -> None:
@@ -416,8 +467,11 @@ class Guard(AST):
         self.guards.decorate(symTabStack)
         self.guard.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Guard\n{self.guards.imprimir(level + 1)}\n{self.guard.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Guard\n{self.guards.printAST(level + 1)}\n{self.guard.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Then(AST):
     def __init__(self, expr, stmts, row, column) -> None:
@@ -429,8 +483,11 @@ class Then(AST):
         self.expr.decorate(symTabStack)
         self.stmts.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Then\n{self.expr.imprimir(level + 1)}\n{self.stmts.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ FOR LOOP ------------------
 class For(AST):
@@ -444,8 +501,11 @@ class For(AST):
         self.range.decorate(symTabStack)
         self.instr.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}For\n{self.range.imprimir(level + 1)}\n{self.instr.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}For\n{self.range.printAST(level + 1)}\n{self.instr.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class In(AST):
     def __init__(self, id, range, row, column) -> None:
@@ -458,8 +518,11 @@ class In(AST):
         self.id.decorate(symTabStack)
         self.range.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}In\n{self.id.imprimir(level + 1)}\n{self.range.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}In\n{self.id.printAST(level + 1)}\n{self.range.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class To(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -473,8 +536,11 @@ class To(AST):
         if self.expr1.type != INT or self.expr2.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: type expected for {self.expr1.value} and {self.expr2.value} is {INT} but is {self.expr1.type} and {self.expr2.type}')
 
-    def imprimir(self, level):
-        return f'{"-" * level}To\n{self.expr1.imprimir(level + 1)}\n{self.expr2.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}To\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ DO LOOP ------------------
 class Do(AST):
@@ -485,8 +551,11 @@ class Do(AST):
     def decorate(self, symTabStack):
         self.stmts.decorate(symTabStack)
 
-    def imprimir(self, level):
-        return f'{"-" * level}Do\n{self.stmts.imprimir(level + 1)}'
+    def printAST(self, level):
+        return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ TYPES ------------------
 class Type(AST):
@@ -500,8 +569,11 @@ class Type(AST):
     def decorate(self, symTabStack):
         pass
 
-    # def imprimir(self, level):
+    # def printAST(self, level):
     #     return f'{"-" * level}Type\n{self.type}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class ArrayType(AST):
     def __init__(self, start, end, row, column) -> None:
@@ -522,10 +594,13 @@ class ArrayType(AST):
         if self.end.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.end.type}')
 
-    # def imprimir(self, level):
+    # def printAST(self, level):
     #     print("-" * level + "ArrayType")
-    #     self.start.imprimir(level + 1)
-    #     self.end.imprimir(level + 1)
+    #     self.start.printAST(level + 1)
+    #     self.end.printAST(level + 1)
+
+    def printPreApp(self):
+        return f'to-do' 
 
 # ------------------ TERMINALS ------------------
 class Id(AST):
@@ -546,8 +621,11 @@ class Id(AST):
         # if self.idValue == None:
         #     raise Exception(f'Error in row {self.row}, column {self.column}: Variable {self.value} not initialized')
 
-    def imprimir(self, level):
+    def printAST(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Number(AST):
     def __init__(self, value, row, column) -> None:
@@ -561,8 +639,11 @@ class Number(AST):
     def decorate(self, symTabStack):
         pass
 
-    def imprimir(self, level):
+    def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class Boolean(AST):
     def __init__(self, value, row, column) -> None:
@@ -576,8 +657,11 @@ class Boolean(AST):
     def decorate(self, symTabStack):
         pass
 
-    def imprimir(self, level):
+    def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 class String(AST):
     def __init__(self, value, row, column) -> None:
@@ -591,8 +675,11 @@ class String(AST):
     def decorate(self, symTabStack):
         pass
 
-    def imprimir(self, level):
+    def printAST(self, level):
         return f'{"-" * level}String: "{self.value}"'
+
+    def printPreApp(self):
+        return f'to-do' 
 
 
 # Alias para tipos de datos

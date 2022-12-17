@@ -1,0 +1,5 @@
+|[
+    declare
+    y, z : int
+    y:=z+89
+]|

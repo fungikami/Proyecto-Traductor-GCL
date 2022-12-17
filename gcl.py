@@ -35,7 +35,8 @@ if __name__ == '__main__':
     if result:
         try:
             result.decorate()
-            print(result.imprimir(0))
+            #print(result.printAST(0))
+            print(result.printPreApp())
         except Exception as e:
             print(e)
             exit(1)
