@@ -125,7 +125,7 @@ class Declaration(AST):
         global N
         # Agrega al ultimo diccionario de la lista los ids
         for id in self.idLists:
-            esp[-1][id.value] = [TYPEDICT[self.type.name], f'x_{{{N}}}']
+            esp[-1][id.value] = [getTypePreApp(self.type.name), f'x_{{{N}}}']
             N += 1
 
 # ------------------ SEQUENCING ------------------

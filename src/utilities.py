@@ -7,6 +7,21 @@
 
 from PreAppTable import *
 
+def getTypePreApp(var):
+    ''' Devuelve el tipo de una variable '''
+    if var == INT:
+        return INTSET 
+    elif var == BOOL:
+        return BOOLSET
+    elif var == STR:
+        return 
+    else:
+        # Extrae los números del tipo: array[N..M]
+        n = convertNumberPreApp(var[6:var.index('..')])
+        m = convertNumberPreApp(var[var.index('..')+2:-1])
+        range = f'({RANGEARRAY} {m} {n})'
+        return f'({SUPERSCRIPT} {range} {INTSET})'
+
 def getListEsp(listDict):
     ''' Devuelve una lista de los espacios [T1, T2, ...] de una lista de diccionarios 
         de la forma [{'x': ['T1', x_1]}, {'y': ['T2', x_2]}, ...] 
