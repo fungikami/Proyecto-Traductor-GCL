@@ -7,7 +7,35 @@
 
 from PreAppTable import *
 
-# ------------------------------------
+def getListEsp(listDict):
+    ''' Devuelve una lista de los espacios [T1, T2, ...] de una lista de diccionarios 
+        de la forma [{'x': ['T1', x_1]}, {'y': ['T2', x_2]}, ...] 
+    '''
+    esps = []
+    for dic in listDict:
+        values = dic.values()
+        for value in values:
+            esps.append(value[0])
+    return esps
+
+def getListVar(listDict):
+    ''' Devuelve una lista de las variables [x1, x2, ...] de una lista de diccionarios 
+        de la forma [{'x': ['T1', x_1]}, {'y': ['T2', x_2]}, ...] 
+    '''
+    vars = []
+    for dic in listDict:
+        values = dic.values()
+        for value in values:
+            vars.append(value[1])
+    return vars
+
+def sustitution(list, var, newValue):
+    ''' Devuelve una lista de variables tras una sustitución '''
+    copyList = list.copy()
+    pos = list.index(var)
+    copyList[pos] = newValue
+    return copyList
+
 def crossProduct(list):
     ''' Devuelve un string de la forma T1 x (T2 x (T3 x ...)) '''
     if len(list) == 1:
@@ -71,5 +99,7 @@ def equalPreApp(var, value):
     return f'({EQUAL} {value} {var})'
 
 def setPreApp(range, body):
-    ''' Devuelve un string de la forma (set x : range | body) '''
-    return f'({SET2} {range} {body})'
+    ''' Devuelve un string de la forma {range | body} o {body}'''
+    if range == None:
+        return f'({SET2} {body})'
+    return f'({SET1} {body} {range})'

@@ -23,6 +23,9 @@ class Program(AST):
         # Crea una Tabla de Símbolos
         self.symTabStack = SymbolTable()
 
+        # Para guardar espacios de estados
+        self.preAppStack = []
+
     def decorate(self):
         self.block.decorate(self.symTabStack)
 
@@ -30,7 +33,7 @@ class Program(AST):
         return self.block.printAST(level)
 
     def printPreApp(self):
-        return self.block.printPreApp()
+        return self.block.printPreApp(self.preAppStack)
 
 # ------------------ BLOCK ------------------
 class Block(AST):
@@ -56,10 +59,19 @@ class Block(AST):
         else:
             return f'{"-" * level}Block\n{self.instrs.printAST(level + 1)}'
 
-    def printPreApp(self, esp=[]):
-        # ARREGLAR PARA QUE SOLO TOME EL ESP DEL BLOQUE ACTUAL Y PADRES
-        esp += self.decls.printPreApp()
-        return f'{self.instrs.printPreApp(esp)}'
+    def printPreApp(self, esp):
+        # Agrega nuevo diccionario a la lista de espacios de estados
+        esp.append({})
+
+        # Declaraciones agregan los espacios de estados al diccionario nuevo
+        self.decls.printPreApp(esp)
+
+        toReturn = f'{self.instrs.printPreApp(esp)}'
+
+        # Desempila el diccionario
+        esp.pop()
+
+        return toReturn
 
 # ------------------ DECLARATIONS ------------------
 class Declare(AST):
@@ -74,7 +86,7 @@ class Declare(AST):
     def printAST(self, level):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.printAST(level + 1, True)}'
 
-    def printPreApp(self, esp=[]):
+    def printPreApp(self, esp):
         return self.seq_decls.printPreApp(esp, True)
 
 class Declaration(AST):
@@ -103,11 +115,12 @@ class Declaration(AST):
         return result.rstrip()
 
     def printPreApp(self, esp, isDecl):
-        copyEsp = esp.copy()
-        # Agrega a la lista de esp los tipos de cada id
+        num = 1     # Por arreglar
+
+        # Agrega al ultimo diccionario de la lista los ids
         for id in self.idLists:
-            copyEsp.append(TYPEDICT[self.type.name])
-        return copyEsp
+            esp[-1][id.value] = [TYPEDICT[self.type.name], f'x_{{{num}}}']
+            num += 1
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -128,9 +141,9 @@ class Sequencing(AST):
     def printPreApp(self, esp, isDecl = False):
         # Si es una secuencia de declaraciones, se va por Declaration
         if isDecl:
-            esp1 = self.instr1.printPreApp(esp, True)
-            esp2 = self.instr2.printPreApp(esp1, True)
-            return esp2
+            self.instr1.printPreApp(esp, True)
+            self.instr2.printPreApp(esp, True)
+            return
 
         # Composición de la sem de cada instrucción
         else:
@@ -154,7 +167,7 @@ class Skip(AST):
     def printPreApp(self, esp):
         # Unir los estados Esp con {abort} para tener Esp'
         abort = f'({SET2} {ABORT})'
-        espPrima = f'({CUP} {abort} {crossProduct(esp)})'
+        espPrima = f'({CUP} {abort} {crossProduct(getListEsp(esp))})'
 
         # Retorna la función identidad
         return f'({IDENTITY} {espPrima})'
@@ -202,19 +215,26 @@ class Asig(AST):
         return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp):
+        types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
+        range = crossProductPreApp(types)                       # (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inPreApp('x_{120}', range)                     # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
-        range = crossProductPreApp(esp)                     # (T1 x ... x Tn) x (T1 x ... x Tn)
-        inRange = inPreApp(self.id.printPreApp(esp), range) # x in (T1 x ... x Tn) x (T1 x ... x Tn)
-        coord = coordenatesPreApp(['x_{2}', 'x_{3}'])       # (x_2, x_3)
-        expr = self.expr.printPreApp(esp)                   # x + 89
-        sust = coordenatesPreApp([expr, 'x_{3}'])           # (x + 89, x_3)  
-        tupl = tuplePreApp(coord, sust)                     # <(x_2, x_3), (x + 89, x_3)>
-        equal = equalPreApp(self.id.printPreApp(esp), tupl) # x = <(x_2, x_3), (x + 89, x_3)>
-        exist = existPreApp('x_{2}', equal)                 # E< (x_2, x_3), (x + 89, x_3) >
-        anidateExist = anidateExistPreApp(['x_{3}'], exist) # E : | E : | < (x_2, x_3), (x + 89, x_3) >
-        setAsig = setPreApp(inRange, anidateExist)          # { x in ... | E : | E : | < (x_2, x_3), (x + 89, x_3) > }
+        vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
+        coord = coordenatesPreApp(vars)                         # (x_2, x_3)
+        
+        expr = self.expr.printPreApp(esp)                       # x + 89
+        dummyVar = esp[-1][self.id.value][1]                    # x_1 es la var dummy pa x
+        sust = sustitution(vars, dummyVar, expr)                # [x + 89, x_3]
+        sust = coordenatesPreApp(sust)                          # (x + 89, x_3) 
+        
+        tupl = tuplePreApp(coord, sust)                         # <(x_2, x_3), (x + 89, x_3)>
+        equal = equalPreApp('x_{120}', tupl)                     # x = <(x_2, x_3), (x + 89, x_3)>
 
-        return setAsig
+        anidateExist = anidateExistPreApp(vars, equal)          # E : | E : | < (x_2, x_3), (x + 89, x_3) >
+        setAsig = setPreApp(inRange, anidateExist)              # { x in ... | E : | E : | < (x_2, x_3), (x + 89, x_3) > }
+        setAbort = setPreApp(None, tuplePreApp(ABORT, ABORT))
+        
+        return f'({CUP} {setAbort} {setAsig})'
 
 class Comma(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -238,7 +258,9 @@ class Comma(AST):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return f'to-do' 
+        exp1 = self.expr1.printPreApp(esp)
+        exp2 = self.expr2.printPreApp(esp)
+        return f'({COMMA} {exp2} {exp1})' 
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
@@ -427,7 +449,9 @@ class WriteArray(AST):
         return f'{"-" * level}WriteArray\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return f'to-do' 
+        exp1 = self.id.printPreApp()
+        exp2 = self.expr.printPreApp()
+        return f'({MODIFARRAY} {exp2} {exp1})'
 
 class TwoPoints(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -446,7 +470,9 @@ class TwoPoints(AST):
         return f'{"-" * level}TwoPoints\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return f'to-do' 
+        exp1 = self.expr1.printPreApp()
+        exp2 = self.expr2.printPreApp()
+        return f'(({exp2}) ({exp1}))'
 
 # ------------------ PRINT ------------------
 class Print(AST):
@@ -494,7 +520,7 @@ class If(AST):
         return f'{"-" * level}If\n{self.guards.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return f'to-do' 
+        return self.guards.printPreApp(esp)
 
 class Guard(AST):
     def __init__(self, guards, guard, row, column) -> None:
@@ -664,7 +690,7 @@ class Id(AST):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
 
     def printPreApp(self, esp):
-        return f'x_{{120}}' 
+        return esp[-1][self.value][1]
 
 class Number(AST):
     def __init__(self, value, row, column) -> None:

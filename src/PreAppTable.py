@@ -26,8 +26,8 @@ IN          = 'c_{16}'  # Pertenece a
 NOTIN       = 'c_{17}'  # No pertenece a
 EMPTYSET    = 'c_{18}'  # Conjunto vacio
 
-SET1        = 'c_{19}'  # Conjunto con elementos (NO SE COMO LLAMAR ESTO
-SET2        = 'c_{20}'  # Conjunto con un elemento
+SET1        = 'c_{19}'  # Conjunto con rango y cuerpo
+SET2        = 'c_{20}'  # Conjunto sin rango
 
 COMMA       = 'c_{21}'  # ,
 BIGCUP      = 'c_{22}'  # Union
