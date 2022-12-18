@@ -53,6 +53,19 @@ def compose(list):
         return list[0]
     return f'({CIRC} {compose(list[1:])} {list[0]})'
 
+def composePi(list, semS):
+    ''' Devuelve un string de la forma pi o pi o ... o semS '''
+    if len(list) == 1:
+        return semS 
+
+    # Calcula cuantos pi's hay que agregar
+    m = 0
+    for i in range(len(list)):
+        m += len(list[i])
+    n = m - len(list[-1])
+    pis = [PI] * (m - n)
+    return compose(pis + [semS])
+
 def inPreApp(var, type):
     ''' Devuelve un string de la forma (x : T) '''
     return f'(\lambda {var} . {type})'

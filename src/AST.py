@@ -23,7 +23,8 @@ class Program(AST):
         # Crea una Tabla de Símbolos
         self.symTabStack = SymbolTable()
 
-        # Para guardar espacios de estados
+        # Para guardar espacios de estados, es de la forma:
+        # [{x: [Tipo1, dummyVar1]}, {y: [Tipo2, dummyVar2]}}]
         self.preAppStack = []
 
     def decorate(self):
@@ -62,11 +63,12 @@ class Block(AST):
     def printPreApp(self, esp):
         # Agrega nuevo diccionario a la lista de espacios de estados
         esp.append({})
-
+        
         # Declaraciones agregan los espacios de estados al diccionario nuevo
         self.decls.printPreApp(esp)
 
-        toReturn = f'{self.instrs.printPreApp(esp)}'
+        # Compone los pi's con la sem[S]
+        toReturn = composePi(esp, self.instrs.printPreApp(esp))
 
         # Desempila el diccionario
         esp.pop()
@@ -149,9 +151,8 @@ class Sequencing(AST):
         else:
             inst1 = self.instr1.printPreApp(esp)
             inst2 = self.instr2.printPreApp(esp)
-
-            # MODIFICAR, HAY QUE COMPONER LOS PI EN CASO DE SER BLOQUES ANIDADOS
-            return f'({CIRC} {inst2} {inst1})'
+            comp = f'({CIRC} {inst2} {inst1})'
+            return comp
 
 # ------------------ SKIP ------------------
 class Skip(AST):
@@ -168,7 +169,7 @@ class Skip(AST):
         # Unir los estados Esp con {abort} para tener Esp'
         abort = f'({SET2} {ABORT})'
         espPrima = f'({CUP} {abort} {crossProduct(getListEsp(esp))})'
-
+        
         # Retorna la función identidad
         return f'({IDENTITY} {espPrima})'
 
