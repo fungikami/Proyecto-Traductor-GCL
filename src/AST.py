@@ -10,6 +10,8 @@ from PreAppTable import *
 from utilities import *
 import sys
 
+N = 1
+
 class AST:
     def __init__(self, row, column) -> None:
         self.row = row
@@ -26,6 +28,9 @@ class Program(AST):
         # Para guardar espacios de estados, es de la forma:
         # [{x: [Tipo1, dummyVar1]}, {y: [Tipo2, dummyVar2]}}]
         self.preAppStack = []
+
+        # Contador para los nombres de las variables dummy
+        self.num = 0
 
     def decorate(self):
         self.block.decorate(self.symTabStack)
@@ -117,12 +122,11 @@ class Declaration(AST):
         return result.rstrip()
 
     def printPreApp(self, esp, isDecl):
-        num = 1     # Por arreglar
-
+        global N
         # Agrega al ultimo diccionario de la lista los ids
         for id in self.idLists:
-            esp[-1][id.value] = [TYPEDICT[self.type.name], f'x_{{{num}}}']
-            num += 1
+            esp[-1][id.value] = [TYPEDICT[self.type.name], f'x_{{{N}}}']
+            N += 1
 
 # ------------------ SEQUENCING ------------------
 class Sequencing(AST):
@@ -218,7 +222,7 @@ class Asig(AST):
     def printPreApp(self, esp):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
         range = crossProductPreApp(types)                       # (T1 x ... x Tn) x (T1 x ... x Tn)
-        inRange = inPreApp('x_{120}', range)                     # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
         coord = coordenatesPreApp(vars)                         # (x_2, x_3)
@@ -229,7 +233,7 @@ class Asig(AST):
         sust = coordenatesPreApp(sust)                          # (x + 89, x_3) 
         
         tupl = tuplePreApp(coord, sust)                         # <(x_2, x_3), (x + 89, x_3)>
-        equal = equalPreApp('x_{120}', tupl)                     # x = <(x_2, x_3), (x + 89, x_3)>
+        equal = equalPreApp('x_{120}', tupl)                    # x = <(x_2, x_3), (x + 89, x_3)>
 
         anidateExist = anidateExistPreApp(vars, equal)          # E : | E : | < (x_2, x_3), (x + 89, x_3) >
         setAsig = setPreApp(inRange, anidateExist)              # { x in ... | E : | E : | < (x_2, x_3), (x + 89, x_3) > }
