@@ -126,6 +126,7 @@ class Sequencing(AST):
         return f'{"-" * level}Sequencing\n{self.instr1.printAST(level + 1)}\n{self.instr2.printAST(level + 1)}'
 
     def printPreApp(self, esp, isDecl = False):
+        # Si es una secuencia de declaraciones, se va por Declaration
         if isDecl:
             esp1 = self.instr1.printPreApp(esp, True)
             esp2 = self.instr2.printPreApp(esp1, True)
@@ -201,8 +202,19 @@ class Asig(AST):
         return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        range = crossProductRange(esp)
-        return f'{range}'
+        
+        range = crossProductPreApp(esp)                     # (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inPreApp(self.id.printPreApp(esp), range) # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        coord = coordenatesPreApp(['x_{2}', 'x_{3}'])       # (x_2, x_3)
+        expr = self.expr.printPreApp(esp)                   # x + 89
+        sust = coordenatesPreApp([expr, 'x_{3}'])           # (x + 89, x_3)  
+        tupl = tuplePreApp(coord, sust)                     # <(x_2, x_3), (x + 89, x_3)>
+        equal = equalPreApp(self.id.printPreApp(esp), tupl) # x = <(x_2, x_3), (x + 89, x_3)>
+        exist = existPreApp('x_{2}', equal)                 # E< (x_2, x_3), (x + 89, x_3) >
+        anidateExist = anidateExistPreApp(['x_{3}'], exist) # E : | E : | < (x_2, x_3), (x + 89, x_3) >
+        setAsig = setPreApp(inRange, anidateExist)          # { x in ... | E : | E : | < (x_2, x_3), (x + 89, x_3) > }
+
+        return setAsig
 
 class Comma(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -225,7 +237,7 @@ class Comma(AST):
     def printAST(self, level):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ BINARY OPERATORS ------------------
@@ -238,6 +250,7 @@ class BinOp(AST):
         self.expectedType = expectedType
         self.type = valueType
         # self.value = f'{self.expr1.value} + {self.expr2.value}'
+        self.idPreApp = idPreApp
 
     def decorate(self, symTabStack):
         # Caso para el == y != que pueden comparar booleanos o enteros
@@ -261,8 +274,10 @@ class BinOp(AST):
     def printAST(self, level):
         return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self):
-        return f'({idPreApp} {self.expr1.printPreApp()} {self.expr2.printPreApp()})'
+    def printPreApp(self, esp):
+        exp1 = self.expr1.printPreApp(esp)
+        exp2 = self.expr2.printPreApp(esp)
+        return f'({self.idPreApp} {exp2} {exp1})'
 
 class Plus(BinOp):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -338,7 +353,7 @@ class UnaryMinus(AST):
     def printAST(self, level):
         return f'{"-" * level}Minus | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'({UNARYMINUS} {self.expr.printPreApp()})'
 
 class Not(AST):
@@ -356,7 +371,7 @@ class Not(AST):
     def printAST(self, level):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'({NOT} {self.expr.printPreApp()})'
 
 # ------------------ ARRAYS ------------------
@@ -386,7 +401,7 @@ class ReadArray(AST):
     def printAST(self, level):
         return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class WriteArray(AST):
@@ -411,7 +426,7 @@ class WriteArray(AST):
     def printAST(self, level):
         return f'{"-" * level}WriteArray\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class TwoPoints(AST):
@@ -430,7 +445,7 @@ class TwoPoints(AST):
     def printAST(self, level):
         return f'{"-" * level}TwoPoints\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ PRINT ------------------
@@ -445,7 +460,7 @@ class Print(AST):
     def printAST(self, level):
         return f'{"-" * level}Print\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ CONCAT ------------------
@@ -463,7 +478,7 @@ class Concat(AST):
     def printAST(self, level):
         return f'{"-" * level}Concat\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ IF ------------------
@@ -478,7 +493,7 @@ class If(AST):
     def printAST(self, level):
         return f'{"-" * level}If\n{self.guards.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class Guard(AST):
@@ -494,7 +509,7 @@ class Guard(AST):
     def printAST(self, level):
         return f'{"-" * level}Guard\n{self.guards.printAST(level + 1)}\n{self.guard.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class Then(AST):
@@ -510,7 +525,7 @@ class Then(AST):
     def printAST(self, level):
         return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ FOR LOOP ------------------
@@ -528,7 +543,7 @@ class For(AST):
     def printAST(self, level):
         return f'{"-" * level}For\n{self.range.printAST(level + 1)}\n{self.instr.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class In(AST):
@@ -545,7 +560,7 @@ class In(AST):
     def printAST(self, level):
         return f'{"-" * level}In\n{self.id.printAST(level + 1)}\n{self.range.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class To(AST):
@@ -563,7 +578,7 @@ class To(AST):
     def printAST(self, level):
         return f'{"-" * level}To\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ DO LOOP ------------------
@@ -578,7 +593,7 @@ class Do(AST):
     def printAST(self, level):
         return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ TYPES ------------------
@@ -596,7 +611,7 @@ class Type(AST):
     # def printAST(self, level):
     #     return f'{"-" * level}Type\n{self.type}'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 class ArrayType(AST):
@@ -623,7 +638,7 @@ class ArrayType(AST):
     #     self.start.printAST(level + 1)
     #     self.end.printAST(level + 1)
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 
 
 # ------------------ TERMINALS ------------------
@@ -648,8 +663,8 @@ class Id(AST):
     def printAST(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp):
+        return f'x_{{120}}' 
 
 class Number(AST):
     def __init__(self, value, row, column) -> None:
@@ -666,8 +681,8 @@ class Number(AST):
     def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp):
+        return f'({convertNumberPreApp(self.value)})' 
 
 class Boolean(AST):
     def __init__(self, value, row, column) -> None:
@@ -684,8 +699,8 @@ class Boolean(AST):
     def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
-    def printPreApp(self):
-        return f'to-do' 
+    def printPreApp(self, esp):
+        return f'{convertBooleanPreApp(self.value)}'
 
 class String(AST):
     def __init__(self, value, row, column) -> None:
@@ -702,5 +717,5 @@ class String(AST):
     def printAST(self, level):
         return f'{"-" * level}String: "{self.value}"'
 
-    def printPreApp(self):
+    def printPreApp(self, esp):
         return f'to-do' 

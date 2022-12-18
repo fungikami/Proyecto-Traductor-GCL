@@ -19,8 +19,8 @@ SUPSUB      = 'c_{10}'  # NO SE QUE ES ESTOOOOOOOOOOOOOO
 
 FORALL1     = 'c_{11}'  # Para todo sin 
 FORALL2     = 'c_{12}'  # Para todo con 
-EXISTS1     = 'c_{13}'  # Existe sin
-EXISTS2     = 'c_{14}'  # Existe con
+EXIST1      = 'c_{13}'  # Existe sin
+EXIST2      = 'c_{14}'  # Existe con
 EQUAL       = 'c_{15}'  # =
 IN          = 'c_{16}'  # Pertenece a
 NOTIN       = 'c_{17}'  # No pertenece a
@@ -105,6 +105,11 @@ INTDICT = {
     7: SEVEN,
     8: EIGHT,
     9: NINE
+}
+
+BOOLDICT = {
+    'true': TRUE,
+    'false': FALSE
 }
 
 TYPEDICT = {
