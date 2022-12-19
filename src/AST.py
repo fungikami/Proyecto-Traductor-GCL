@@ -551,6 +551,7 @@ class Guard(AST):
         cond = self.printSemCond(esp)
 
         # (U Ti)^C
+        cond = f'({SUPERC} {cond})'
 
         # (U Ti)^C x abort
         abort = setPreApp(None, ABORT)

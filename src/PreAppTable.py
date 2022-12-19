@@ -52,7 +52,7 @@ SUPERSCRIPT = 'c_{38}'  # Superindice
 IDENTITY    = 'c_{39}'  # Función identi
 ABORT       = 'c_{40}'  # Abort
 
-SUPERE      = 'c_{41}'  # Elevado a la epsilon (NO SE COMO LLAMAR ESTO)
+SUPERC      = 'c_{41}'  # Elevado a la c
 
 ZERO        = 'c_{42}'  # Cero
 ONE         = 'c_{43}'  # Uno

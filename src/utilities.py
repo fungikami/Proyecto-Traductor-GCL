@@ -8,7 +8,7 @@
 from PreAppTable import *
 
 def getTypePreApp(var):
-    ''' Devuelve el tipo de una variable '''
+    ''' Devuelve el tipo de una variable en PreApp '''
     if var == INT:
         return INTSET 
     elif var == BOOL:
