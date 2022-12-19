@@ -57,7 +57,7 @@ def crossProduct(list):
         return list[0]
     return f'({CROSSPROD} {crossProduct(list[1:])} {list[0]})'
 
-def crossProductPreApp(list):
+def crossProductRange(list):
     ''' Devuelve un string de la forma (T1 x ...) x (T3 x ...) '''
     cp = crossProduct(list)
     return f'({CROSSPROD} {cp} {cp})'
@@ -131,3 +131,7 @@ def setPreApp(range, body):
     if range == None:
         return f'({SET2} {body})'
     return f'({SET1} {body} {range})'
+
+def identityFun(esp):
+    ''' Devuelve la función identidad de forma id_Ti '''
+    return f'({IDENTITY} {esp})'

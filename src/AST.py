@@ -221,14 +221,17 @@ class Asig(AST):
 
     def printPreApp(self, esp):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
-        range = crossProductPreApp(types)                       # (T1 x ... x Tn) x (T1 x ... x Tn)
+        range = crossProductRange(types)                       # (T1 x ... x Tn) x (T1 x ... x Tn)
         inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
         coord = coordenatesPreApp(vars)                         # (x_2, x_3)
         
-        expr = self.expr.printPreApp(esp)                       # x + 89
+        expr = self.expr.printPreApp(esp)                       # x_1 + 89
+        
+        # POR ARREGLAR PARA QUE BUSQUE A PADRE SI NO ENCUENTRA EN SU BLOQUE
         dummyVar = esp[-1][self.id.value][1]                    # x_1 es la var dummy pa x
+        
         sust = sustitution(vars, dummyVar, expr)                # [x + 89, x_3]
         sust = coordenatesPreApp(sust)                          # (x + 89, x_3) 
         
@@ -541,7 +544,30 @@ class Guard(AST):
         return f'{"-" * level}Guard\n{self.guards.printAST(level + 1)}\n{self.guard.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return f'to-do' 
+        # Unión de las sem[<inst>] o id_ti
+        instr = self.printSemInstr(esp)
+
+        # Unión de los Ti
+        cond = self.printSemCond(esp)
+
+        # (U Ti)^C
+
+        # (U Ti)^C x abort
+        abort = setPreApp(None, ABORT)
+        condXAbort =f'({CROSSPROD} {abort} {cond})'
+
+        # (U sem[<inst>] o id) U ((U Ti)^C x abort) 
+        return f'({CUP} {condXAbort} {instr})'
+
+    def printSemInstr(self, esp):
+        guard = self.guard.printSemInstr(esp)
+        guards = self.guards.printSemInstr(esp)
+        return f'({CUP} {guard} {guards})'
+
+    def printSemCond(self, esp):
+        guard = self.guard.printSemCond(esp)
+        guards = self.guards.printSemCond(esp)
+        return f'({CUP} {guard} {guards})'
 
 class Then(AST):
     def __init__(self, expr, stmts, row, column) -> None:
@@ -556,8 +582,30 @@ class Then(AST):
     def printAST(self, level):
         return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
-        return f'to-do' 
+    # def printPreApp(self, esp):
+    #     return f'to-do' 
+
+    def getSetCond(self, esp):
+        ''' Retorna el conjunto Ti = {x in Exp | <condicion>} '''
+        types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
+        range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        
+        # POR ARREGLAR PARA QUE LA CONDICION NO TENGA LA VARIABLE DUMMY SINO LA GENERAL (x_{120})
+        cond = self.expr.printPreApp(esp)                       # <condicion>
+        setCond = setPreApp(inRange, cond)                      # {x in (T1 x ... x Tn) x (T1 x ... x Tn) | <condicion>}
+        return setCond
+
+    def printSemInstr(self, esp):
+        ''' Retorna la sem[<instrucciones>] o id_ti '''
+        idTi = identityFun(self.getSetCond(esp))
+        toComp = [self.stmts.printPreApp(esp), idTi]
+        comp = compose(toComp)
+        return comp
+
+    def printSemCond(self, esp):
+        ''' Retorna Ti '''
+        return self.getSetCond(esp)
 
 # ------------------ FOR LOOP ------------------
 class For(AST):
