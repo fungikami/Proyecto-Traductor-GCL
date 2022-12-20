@@ -133,5 +133,17 @@ def setPreApp(range, body):
     return f'({SET1} {body} {range})'
 
 def identityFun(esp):
-    ''' Devuelve la función identidad de forma id_Ti '''
+    ''' 
+        Devuelve la función identidad de forma id_esp donde esp es de la forma
+        (T1 x T2 x ... x Tn) 
+    '''
     return f'({IDENTITY} {esp})'
+
+def espPrima(esp):
+    ''' 
+        Devuelve el espacio prima de un espacio Ti donde esp es de la forma
+        [{x: [T1, x1]}, {y: [T2, x2]}, ...
+    '''
+    abort = f'({SET2} {ABORT})'
+    espPrima = f'({CUP} {abort} {crossProduct(getListEsp(esp))})'
+    return espPrima

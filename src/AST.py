@@ -169,13 +169,9 @@ class Skip(AST):
     def printAST(self, level):
         return f'{"-" * level}skip'
 
-    def printPreApp(self, esp):
-        # Unir los estados Esp con {abort} para tener Esp'
-        abort = f'({SET2} {ABORT})'
-        espPrima = f'({CUP} {abort} {crossProduct(getListEsp(esp))})'
-        
-        # Retorna la función identidad
-        return f'({IDENTITY} {espPrima})'
+    def printPreApp(self, esp):        
+        # Retorna la función identidad con Esp'
+        return identityFun(espPrima(esp))
 
 # ------------------ ASSIGMENT ------------------
 class Asig(AST):
@@ -221,7 +217,7 @@ class Asig(AST):
 
     def printPreApp(self, esp):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
-        range = crossProductRange(types)                       # (T1 x ... x Tn) x (T1 x ... x Tn)
+        range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
         inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
@@ -542,7 +538,7 @@ class Guard(AST):
 
     def printAST(self, level):
         return f'{"-" * level}Guard\n{self.guards.printAST(level + 1)}\n{self.guard.printAST(level + 1)}'
-
+    
     def printPreApp(self, esp):
         # Unión de las sem[<inst>] o id_ti
         instr = self.printSemInstr(esp)
@@ -597,16 +593,40 @@ class Then(AST):
         setCond = setPreApp(inRange, cond)                      # {x in (T1 x ... x Tn) x (T1 x ... x Tn) | <condicion>}
         return setCond
 
-    def printSemInstr(self, esp):
+    def getSemInstr(self, esp):
         ''' Retorna la sem[<instrucciones>] o id_ti '''
         idTi = identityFun(self.getSetCond(esp))
         toComp = [self.stmts.printPreApp(esp), idTi]
         comp = compose(toComp)
         return comp
 
+    # ------------------------------ CASO IF ------------------------------
+    def printSemInstr(self, esp):
+        return self.getSemInstr(esp)
+
     def printSemCond(self, esp):
         ''' Retorna Ti '''
         return self.getSetCond(esp)
+
+    # ---------------------------------------------------------------------
+
+    # ------------------------------ CASO DO ------------------------------
+    
+
+# ------------------ DO LOOP ------------------
+class Do(AST):
+    def __init__(self, stmts, row, column) -> None:
+        super().__init__(row, column)
+        self.stmts = stmts
+
+    def decorate(self, symTabStack):
+        self.stmts.decorate(symTabStack)
+
+    def printAST(self, level):
+        return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
+
+    def printPreApp(self, esp):
+        return self.stmts.printPreApp(esp)
 
 # ------------------ FOR LOOP ------------------
 class For(AST):
@@ -657,21 +677,6 @@ class To(AST):
 
     def printAST(self, level):
         return f'{"-" * level}To\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
-
-    def printPreApp(self, esp):
-        return f'to-do' 
-
-# ------------------ DO LOOP ------------------
-class Do(AST):
-    def __init__(self, stmts, row, column) -> None:
-        super().__init__(row, column)
-        self.stmts = stmts
-
-    def decorate(self, symTabStack):
-        self.stmts.decorate(symTabStack)
-
-    def printAST(self, level):
-        return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
 
     def printPreApp(self, esp):
         return f'to-do' 
