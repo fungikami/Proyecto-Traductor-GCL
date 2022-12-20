@@ -85,11 +85,15 @@ def composePi(list, semS):
     pis = [PI] * (m - n)
     return compose(pis + [semS])
 
-def inPreApp(var, type, isIn = True):
+def inRangePreApp(var, type, isIn = True):
     ''' Devuelve un string de la forma (x : T) '''
     if isIn:
         return f'(\lambda {var} . {type})'
     return f'(\lambda {var} . {type})'
+
+def notInPreApp(var, type):
+    ''' Devuelve un string de la forma x in T '''
+    return f'({NOT} ({PAREN} ({IN} {type} {var})))'
 
 def convertNumberPreApp(number):
     ''' Devuelve un string de la forma 123 '''
@@ -129,14 +133,14 @@ def forAllPreApp(var, range, body):
     if range is None:
         return f'({FORALL1} (\lambda {var} . {body}))'
 
-    return f'({FORALL2} (\lambda {var} . {range}) (\lambda {var} . {body}))'
+    return f'({FORALL2} (\lambda {var} . {body})) (\lambda {var} . {range})'
 
 def anidateExistPreApp(vars, body):
     ''' Devuelve un string de la forma (exists x1 : | (exists x2 : | body )'''
     if len(vars) == 1:
         return existPreApp(vars[0], None, body)
 
-    return existPreApp(vars[0], anidateExistPreApp(vars[1:], body))
+    return existPreApp(vars[0], None, anidateExistPreApp(vars[1:], body))
 
 def equalPreApp(var, value):
     ''' Devuelve un string de la forma (x = 123) '''

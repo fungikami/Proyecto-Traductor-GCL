@@ -218,7 +218,7 @@ class Asig(AST):
     def printPreApp(self, esp):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
         range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
-        inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inRangePreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
         coord = coordenatesPreApp(vars)                         # (x_2, x_3)
@@ -588,7 +588,7 @@ class Then(AST):
         ''' Retorna el conjunto Ti = {x in Exp | <condicion>} '''
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
         range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
-        inRange = inPreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inRangePreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         # POR ARREGLAR PARA QUE LA CONDICION NO TENGA LA VARIABLE DUMMY SINO LA GENERAL (x_{120})
         cond = self.expr.printPreApp(esp)                       # <condicion>
@@ -640,15 +640,15 @@ class Do(AST):
         # 1. Lado derecho del set
         espP = espPrima(esp)
         crossEspP = crossProductRange2(espP)            # Esp' x Esp'
-        inRange = inPreApp(z, crossEspP)                # z in Esp' x Esp'
+        inRange = inRangePreApp(z, crossEspP)                # z in Esp' x Esp'
 
         # 2. Lado izquierdo del set
         Pesp = f'({PSET} {crossEspP})'                  # P(Esp'xEsp')
-        inPesp = inPreApp(C, Pesp)                      # C in P(Esp'xEsp')
+        inPesp = inRangePreApp(C, Pesp)                      # C in P(Esp'xEsp')
 
         # 3. (∀m|0 ≤ m ∧ m ≤ i : (m = 0 ∧ D(m) = sem[[Do0]]) ∨ (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]]))
         # (m = 0 ∧ D(m) = sem[[Do0 ]])
-        semDo = f'({C})'                                            # ARREGLAR
+        semDo = f'({C})'                                                                    # ARREGLAR
         dm = f'({CONCAT} ({D}) ({PAREN} {m}))'
         dm1 = binOpPreApp(EQUAL, dm, semDo) 
         body1 = binOpPreApp(AND, binOpPreApp(EQUAL, m, ZERO), dm1)
@@ -656,20 +656,19 @@ class Do(AST):
         # (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]])
         dm2 = binOpPreApp(EQUAL, dm, f'({CONCAT} ({D}) ({PAREN} ({MINUS} {ONE} {m})))') 
         body2 = binOpPreApp(AND, binOpPreApp(GREATER, m, ZERO), dm2)
-        semIf = f'({C})'                                            # ARREGLAR 
+        semIf = f'({C})'                                                                    # ARREGLAR 
         body2 = compose([body2, semIf])
 
         bodyForAll = binOpPreApp(OR, body1, body2)
         rangeForAll = binOpPreApp(AND, binOpPreApp(LEQ, ZERO, m), binOpPreApp(LEQ, m, i))
         forAll = forAllPreApp(m, rangeForAll, bodyForAll)
-        print(forAll)
 
         # 4. C = D(i) ◦ (id{x∈Esp|abort∈D(i)({x})} ∪ {⟨abort, abort⟩})
         di = f'({CONCAT} ({D}) ({PAREN} {i}))'
         cdi = binOpPreApp(EQUAL, C, di)
 
-        inRangeId = inPreApp(x, crossProduct(getListEsp(esp))) 
-        bodyId = inPreApp(ABORT, f'({CONCAT} ({PAREN} ({SET2} {x})) {di}', False)   # Arreglar not in
+        inRangeId = inRangePreApp(x, crossProduct(getListEsp(esp))) 
+        bodyId = notInPreApp(ABORT, f'({CONCAT} ({di}) ({PAREN} ({SET2} {x})))')
         idFun = identityFun(setPreApp(inRangeId, bodyId))
 
         setAbort = setPreApp(None, tuplePreApp(ABORT, ABORT))
@@ -680,8 +679,8 @@ class Do(AST):
         # 6. (∃D|D ∈ (Esp′Esp )[0..i] : bodyExist2)
         bodyExist2 = binOpPreApp(AND, forAll, cond)         # 4. AND 5.
         rangeArray = f'({RANGEARRAY} {i} {ZERO})'
-        rangeExist2 = f'({SUPERSCRIPT} ({SUPERSCRIPT} {espP} {espP}) {rangeArray})'
-        inRangeExist2 = inPreApp(D, rangeExist2) 
+        rangeExist2 = f'({SUPERSCRIPT} ({rangeArray}) ({SUPERSCRIPT} {espP} {espP}))'
+        inRangeExist2 = inRangePreApp(D, rangeExist2) 
         exist2 = existPreApp(D, inRangeExist2, bodyExist2)
 
         # 7. (∃i|i ≥ 0 : exist2)
