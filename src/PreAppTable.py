@@ -111,8 +111,3 @@ BOOLDICT = {
     'true': TRUE,
     'false': FALSE
 }
-
-TYPEDICT = {
-    INT: INTSET,
-    BOOL: BOOLSET,
-}
