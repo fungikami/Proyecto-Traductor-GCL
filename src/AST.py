@@ -65,7 +65,7 @@ class Block(AST):
         else:
             return f'{"-" * level}Block\n{self.instrs.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         # Agrega nuevo diccionario a la lista de espacios de estados
         esp.append({})
         
@@ -93,7 +93,7 @@ class Declare(AST):
     def printAST(self, level):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.printAST(level + 1, True)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return self.seq_decls.printPreApp(esp, True)
 
 class Declaration(AST):
@@ -121,7 +121,7 @@ class Declaration(AST):
             result += f'{"-" * level}variable: {id.value} | type: {self.type.name}\n'
         return result.rstrip()
 
-    def printPreApp(self, esp, isDecl):
+    def printPreApp(self, esp, typ=None, isDecl = False):
         global N
         # Agrega al ultimo diccionario de la lista los ids
         for id in self.idLists:
@@ -144,7 +144,7 @@ class Sequencing(AST):
             return f'{self.instr1.printAST(level, True)}\n{self.instr2.printAST(level, True)}'
         return f'{"-" * level}Sequencing\n{self.instr1.printAST(level + 1)}\n{self.instr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp, isDecl = False):
+    def printPreApp(self, esp, typ=None, isDecl = False):
         # Si es una secuencia de declaraciones, se va por Declaration
         if isDecl:
             self.instr1.printPreApp(esp, True)
@@ -169,7 +169,7 @@ class Skip(AST):
     def printAST(self, level):
         return f'{"-" * level}skip'
 
-    def printPreApp(self, esp):        
+    def printPreApp(self, esp, typ=None):        
         # Retorna la función identidad con Esp'
         return identityFun(espPrima(esp))
 
@@ -215,7 +215,7 @@ class Asig(AST):
     def printAST(self, level):
         return f'{"-" * level}Asig\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
         range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
         inRange = inRangePreApp('x_{120}', range)               # x in (T1 x ... x Tn) x (T1 x ... x Tn)
@@ -223,7 +223,7 @@ class Asig(AST):
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
         coord = coordenatesPreApp(vars)                         # (x_2, x_3)
         
-        expr = self.expr.printPreApp(esp)                       # x_1 + 89
+        expr = self.expr.printPreApp(esp, self.id.type)         # x_1 + 89
         
         # POR ARREGLAR PARA QUE BUSQUE A PADRE SI NO ENCUENTRA EN SU BLOQUE
         dummyVar = esp[-1][self.id.value][1]                    # x_1 es la var dummy pa x
@@ -261,12 +261,26 @@ class Comma(AST):
     def printAST(self, level):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
-        exp1 = self.expr1.printPreApp(esp)
-        exp2 = self.expr2.printPreApp(esp)
+    def getPreApp(self, esp, type):
+        # Del tipo array[-1..1], obtiene el rango del arreglo
+        # OJO con como está construido Comma, exp2 es el último elemento
+        arrRange = type.split('[')[1].split(']')[0].split('..')
+        arrSize = int(arrRange[1]) - int(arrRange[0]) + 1
+        pos = int(arrRange[1]) - (arrSize - self.len)
+
+        # Crea la tupla <pos, valor> de expr2
+        exp2 = tuplePreApp(convertNumberPreApp(pos), self.expr2.printPreApp(esp, type))
         
-        # ARREGLAR PARA QUE SEA DE LA FORMA ({<pos, valor>, <pos, valor>})
+        # Va recorriendo exp1 hasta llegar a un elemento que no sea Comma
+        if (isinstance(self.expr1, Comma)):
+            exp1 = self.expr1.getPreApp(esp, type)
+        else:
+            exp1 = tuplePreApp(convertNumberPreApp(pos-1), self.expr1.printPreApp(esp, type))
+
         return f'({COMMA} {exp2} {exp1})' 
+
+    def printPreApp(self, esp, typ=None):       
+        return setPreApp(None, self.getPreApp(esp, typ))
 
 # ------------------ BINARY OPERATORS ------------------
 class BinOp(AST):
@@ -302,7 +316,7 @@ class BinOp(AST):
     def printAST(self, level):
         return f'{"-" * level}{self.name} | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         exp1 = self.expr1.printPreApp(esp)
         exp2 = self.expr2.printPreApp(esp)
         return f'({self.idPreApp} {exp2} {exp1})'
@@ -381,7 +395,7 @@ class UnaryMinus(AST):
     def printAST(self, level):
         return f'{"-" * level}Minus | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'({UNARYMINUS} {self.expr.printPreApp()})'
 
 class Not(AST):
@@ -399,7 +413,7 @@ class Not(AST):
     def printAST(self, level):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'({NOT} {self.expr.printPreApp()})'
 
 # ------------------ ARRAYS ------------------
@@ -429,7 +443,7 @@ class ReadArray(AST):
     def printAST(self, level):
         return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 class WriteArray(AST):
@@ -454,7 +468,7 @@ class WriteArray(AST):
     def printAST(self, level):
         return f'{"-" * level}WriteArray\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         exp1 = self.id.printPreApp()
         exp2 = self.expr.printPreApp()
         return f'({MODIFARRAY} {exp2} {exp1})'
@@ -475,7 +489,7 @@ class TwoPoints(AST):
     def printAST(self, level):
         return f'{"-" * level}TwoPoints\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         exp1 = self.expr1.printPreApp()
         exp2 = self.expr2.printPreApp()
         return f'(({exp2}) ({exp1}))'
@@ -492,7 +506,7 @@ class Print(AST):
     def printAST(self, level):
         return f'{"-" * level}Print\n{self.expr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 # ------------------ CONCAT ------------------
@@ -510,7 +524,7 @@ class Concat(AST):
     def printAST(self, level):
         return f'{"-" * level}Concat\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 # ------------------ IF ------------------
@@ -525,7 +539,7 @@ class If(AST):
     def printAST(self, level):
         return f'{"-" * level}If\n{self.guards.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return self.guards.printPreApp(esp)
 
 class Guard(AST):
@@ -541,7 +555,7 @@ class Guard(AST):
     def printAST(self, level):
         return f'{"-" * level}Guard\n{self.guards.printAST(level + 1)}\n{self.guard.printAST(level + 1)}'
     
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         # Unión de las sem[<inst>] o id_ti
         instr = self.printSemInstr(esp)
 
@@ -581,7 +595,7 @@ class Then(AST):
     def printAST(self, level):
         return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
     def getSetCond(self, esp):
@@ -627,7 +641,7 @@ class Do(AST):
     def printAST(self, level):
         return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         # Letras fijas:
         C = 'x_{67}'
         D = 'x_{68}'
@@ -716,7 +730,7 @@ class For(AST):
     def printAST(self, level):
         return f'{"-" * level}For\n{self.range.printAST(level + 1)}\n{self.instr.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 class In(AST):
@@ -733,7 +747,7 @@ class In(AST):
     def printAST(self, level):
         return f'{"-" * level}In\n{self.id.printAST(level + 1)}\n{self.range.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 class To(AST):
@@ -751,7 +765,7 @@ class To(AST):
     def printAST(self, level):
         return f'{"-" * level}To\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 # ------------------ TYPES ------------------
@@ -769,7 +783,7 @@ class Type(AST):
     # def printAST(self, level):
     #     return f'{"-" * level}Type\n{self.type}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 class ArrayType(AST):
@@ -796,7 +810,7 @@ class ArrayType(AST):
     #     self.start.printAST(level + 1)
     #     self.end.printAST(level + 1)
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
 
 # ------------------ TERMINALS ------------------
@@ -821,7 +835,7 @@ class Id(AST):
     def printAST(self, level):
         return f'{"-" * level}Ident: {self.value} | type: {self.type}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return esp[-1][self.value][1]
 
 class Number(AST):
@@ -839,7 +853,7 @@ class Number(AST):
     def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'({convertNumberPreApp(self.value)})' 
 
 class Boolean(AST):
@@ -857,7 +871,7 @@ class Boolean(AST):
     def printAST(self, level):
         return f'{"-" * level}Literal: {self.value} | type: {self.type}'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'{convertBooleanPreApp(self.value)}'
 
 class String(AST):
@@ -875,5 +889,5 @@ class String(AST):
     def printAST(self, level):
         return f'{"-" * level}String: "{self.value}"'
 
-    def printPreApp(self, esp):
+    def printPreApp(self, esp, typ=None):
         return f'to-do' 
