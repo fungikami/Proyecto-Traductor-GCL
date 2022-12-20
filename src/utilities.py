@@ -62,6 +62,10 @@ def crossProductRange(list):
     cp = crossProduct(list)
     return f'({CROSSPROD} {cp} {cp})'
 
+def crossProductRange2(preApp):
+    ''' Devuelve un string de la forma (T1 x ...) x (T3 x ...) '''
+    return f'({CROSSPROD} {preApp} {preApp})'
+
 def compose(list):
     ''' Devuelve un string de la forma T1 o (T2 o (T3 o ...)) '''
     if len(list) == 1:
@@ -81,8 +85,10 @@ def composePi(list, semS):
     pis = [PI] * (m - n)
     return compose(pis + [semS])
 
-def inPreApp(var, type):
+def inPreApp(var, type, isIn = True):
     ''' Devuelve un string de la forma (x : T) '''
+    if isIn:
+        return f'(\lambda {var} . {type})'
     return f'(\lambda {var} . {type})'
 
 def convertNumberPreApp(number):
@@ -111,20 +117,34 @@ def tuplePreApp(l, r):
     ''' Devuelve un string de la forma <l, r> '''
     return f'({TUPLE} {r} {l})'
 
-def existPreApp(var, body):
+def existPreApp(var, range, body):
     ''' Devuelve un string de la forma (exists x : | body )'''
-    return f'({EXIST1} (\lambda {var} . {body}))'
+    if range is None:
+        return f'({EXIST1} (\lambda {var} . {body}))'
+
+    return f'({EXIST2} (\lambda {var} . {range}) (\lambda {var} . {body}))'
+
+def forAllPreApp(var, range, body):
+    ''' Devuelve un string de la forma (exists x : | body )'''
+    if range is None:
+        return f'({FORALL1} (\lambda {var} . {body}))'
+
+    return f'({FORALL2} (\lambda {var} . {range}) (\lambda {var} . {body}))'
 
 def anidateExistPreApp(vars, body):
     ''' Devuelve un string de la forma (exists x1 : | (exists x2 : | body )'''
     if len(vars) == 1:
-        return existPreApp(vars[0], body)
+        return existPreApp(vars[0], None, body)
 
     return existPreApp(vars[0], anidateExistPreApp(vars[1:], body))
 
 def equalPreApp(var, value):
     ''' Devuelve un string de la forma (x = 123) '''
     return f'({EQUAL} {value} {var})'
+
+def binOpPreApp(op, a, b):
+    ''' Devuelve un string de la forma a op b '''
+    return f'({op} {b} {a})'
 
 def setPreApp(range, body):
     ''' Devuelve un string de la forma {range | body} o {body}'''

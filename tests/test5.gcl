@@ -1,0 +1,9 @@
+|[
+  declare
+    i : int
+
+    i := 0;
+    do i <= 5 -->
+       i := i+1
+    od
+]| 

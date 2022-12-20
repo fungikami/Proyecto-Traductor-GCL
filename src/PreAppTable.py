@@ -45,7 +45,7 @@ CROSSPROD   = 'c_{32}'  # Producto cruz
 
 PAREN       = 'c_{33}'  # Parentesis
 CIRC        = 'c_{34}'  # Composicion
-POWERSET    = 'c_{35}'  # Conjunto de partes
+PSET        = 'c_{35}'  # Conjunto de partes
 INTSET      = 'c_{36}'  # Conjunto de enteros
 BOOLSET     = 'c_{37}'  # Conjunto de booleanos
 SUPERSCRIPT = 'c_{38}'  # Superindice

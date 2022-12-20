@@ -264,6 +264,8 @@ class Comma(AST):
     def printPreApp(self, esp):
         exp1 = self.expr1.printPreApp(esp)
         exp2 = self.expr2.printPreApp(esp)
+
+        # ARREGLAR PARA QUE SEA DE LA FORMA ({<pos, valor>, <pos, valor>})
         return f'({COMMA} {exp2} {exp1})' 
 
 # ------------------ BINARY OPERATORS ------------------
@@ -579,8 +581,8 @@ class Then(AST):
     def printAST(self, level):
         return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
 
-    # def printPreApp(self, esp):
-    #     return f'to-do' 
+    def printPreApp(self, esp):
+        return f'to-do' 
 
     def getSetCond(self, esp):
         ''' Retorna el conjunto Ti = {x in Exp | <condicion>} '''
@@ -626,7 +628,79 @@ class Do(AST):
         return f'{"-" * level}Do\n{self.stmts.printAST(level + 1)}'
 
     def printPreApp(self, esp):
-        return self.stmts.printPreApp(esp)
+        # Letras fijas:
+        C = 'x_{67}'
+        D = 'x_{68}'
+        i = 'x_{105}'
+        m = 'x_{109}'
+        x = 'x_{120}'
+        y = 'x_{121}'
+        z = 'x_{122}'
+
+        # 1. Lado derecho del set
+        espP = espPrima(esp)
+        crossEspP = crossProductRange2(espP)            # Esp' x Esp'
+        inRange = inPreApp(z, crossEspP)                # z in Esp' x Esp'
+
+        # 2. Lado izquierdo del set
+        Pesp = f'({PSET} {crossEspP})'                  # P(Esp'xEsp')
+        inPesp = inPreApp(C, Pesp)                      # C in P(Esp'xEsp')
+
+        # 3. (∀m|0 ≤ m ∧ m ≤ i : (m = 0 ∧ D(m) = sem[[Do0]]) ∨ (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]]))
+        # (m = 0 ∧ D(m) = sem[[Do0 ]])
+        semDo = f'({C})'                                            # ARREGLAR
+        dm = f'({CONCAT} ({D}) ({PAREN} {m}))'
+        dm1 = binOpPreApp(EQUAL, dm, semDo) 
+        body1 = binOpPreApp(AND, binOpPreApp(EQUAL, m, ZERO), dm1)
+
+        # (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]])
+        dm2 = binOpPreApp(EQUAL, dm, f'({CONCAT} ({D}) ({PAREN} ({MINUS} {ONE} {m})))') 
+        body2 = binOpPreApp(AND, binOpPreApp(GREATER, m, ZERO), dm2)
+        semIf = f'({C})'                                            # ARREGLAR 
+        body2 = compose([body2, semIf])
+
+        bodyForAll = binOpPreApp(OR, body1, body2)
+        rangeForAll = binOpPreApp(AND, binOpPreApp(LEQ, ZERO, m), binOpPreApp(LEQ, m, i))
+        forAll = forAllPreApp(m, rangeForAll, bodyForAll)
+        print(forAll)
+
+        # 4. C = D(i) ◦ (id{x∈Esp|abort∈D(i)({x})} ∪ {⟨abort, abort⟩})
+        di = f'({CONCAT} ({D}) ({PAREN} {i}))'
+        cdi = binOpPreApp(EQUAL, C, di)
+
+        inRangeId = inPreApp(x, crossProduct(getListEsp(esp))) 
+        bodyId = inPreApp(ABORT, f'({CONCAT} ({PAREN} ({SET2} {x})) {di}', False)   # Arreglar not in
+        idFun = identityFun(setPreApp(inRangeId, bodyId))
+
+        setAbort = setPreApp(None, tuplePreApp(ABORT, ABORT))
+
+        unionCond = binOpPreApp(CUP, idFun, setAbort)
+        cond = compose([cdi, unionCond])
+
+        # 6. (∃D|D ∈ (Esp′Esp )[0..i] : bodyExist2)
+        bodyExist2 = binOpPreApp(AND, forAll, cond)         # 4. AND 5.
+        rangeArray = f'({RANGEARRAY} {i} {ZERO})'
+        rangeExist2 = f'({SUPERSCRIPT} ({SUPERSCRIPT} {espP} {espP}) {rangeArray})'
+        inRangeExist2 = inPreApp(D, rangeExist2) 
+        exist2 = existPreApp(D, inRangeExist2, bodyExist2)
+
+        # 7. (∃i|i ≥ 0 : exist2)
+        rangeExist1 = binOpPreApp(GEQ, i, ZERO)
+        exist1 = existPreApp(i, rangeExist1, exist2)
+
+        # 8. U{C ∈ P(Esp′ × Esp′)| exist1}
+        set2 = f'({BIGCUP} {setPreApp(inPesp, exist1)})'
+
+        # 9. (∃y|y = set2 : z ∈ y ∪ (Dom(y)c × {abort}))
+        rangeExist = binOpPreApp(EQUAL, y, set2)
+        domY = f'({SUPERC} ({DOM} {y}))'
+        crossDomAbort = crossProduct([domY, setPreApp(None, ABORT)])
+        bodyExist = binOpPreApp(CUP, f'({IN} {y} {z})', crossDomAbort)
+        exist = existPreApp(i, rangeExist, bodyExist)
+
+        # 10. {z ∈ Esp′ × Esp′ | exist }
+        setDo = setPreApp(inRange, exist)
+        return setDo
 
 # ------------------ FOR LOOP ------------------
 class For(AST):
