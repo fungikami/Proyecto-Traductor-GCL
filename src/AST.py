@@ -218,7 +218,7 @@ class Asig(AST):
     def printPreApp(self, esp):
         types = getListEsp(esp)                                 # [T1, T2, ..., Tn]
         range = crossProductRange(types)                        # (T1 x ... x Tn) x (T1 x ... x Tn)
-        inRange = inRangePreApp('x_{120}', range)                    # x in (T1 x ... x Tn) x (T1 x ... x Tn)
+        inRange = inRangePreApp('x_{120}', range)               # x in (T1 x ... x Tn) x (T1 x ... x Tn)
         
         vars = getListVar(esp)                                  # [x_1, x_2, ..., x_n]
         coord = coordenatesPreApp(vars)                         # (x_2, x_3)
@@ -257,14 +257,14 @@ class Comma(AST):
         self.expr2.decorate(symTabStack)
         if self.expr2.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: {self.expr2.value} is not of type {INT}')
-      
+
     def printAST(self, level):
         return f'{"-" * level}Comma | type: {self.type}\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self, esp):
         exp1 = self.expr1.printPreApp(esp)
         exp2 = self.expr2.printPreApp(esp)
-
+        
         # ARREGLAR PARA QUE SEA DE LA FORMA ({<pos, valor>, <pos, valor>})
         return f'({COMMA} {exp2} {exp1})' 
 
@@ -640,11 +640,11 @@ class Do(AST):
         # 1. Lado derecho del set
         espP = espPrima(esp)
         crossEspP = crossProductRange2(espP)            # Esp' x Esp'
-        inRange = inRangePreApp(z, crossEspP)                # z in Esp' x Esp'
+        inRange = inRangePreApp(z, crossEspP)           # z in Esp' x Esp'
 
         # 2. Lado izquierdo del set
         Pesp = f'({PSET} {crossEspP})'                  # P(Esp'xEsp')
-        inPesp = inRangePreApp(C, Pesp)                      # C in P(Esp'xEsp')
+        inPesp = inRangePreApp(C, Pesp)                 # C in P(Esp'xEsp')
 
         # 3. (∀m|0 ≤ m ∧ m ≤ i : (m = 0 ∧ D(m) = sem[[Do0]]) ∨ (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]]))
         # (m = 0 ∧ D(m) = sem[[Do0 ]])

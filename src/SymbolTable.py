@@ -17,6 +17,10 @@ class SymbolVar:
         """ Representación de una variable. """
         return f'variable: {self.name} | type: {self.type}'
 
+    def __repr__(self):
+        """ Representación de una variable. """
+        return f'variable: {self.name} | type: {self.type}'
+
 class SymbolTable:
     """ Clase que implementa la tabla de símbolos del intérprete de GCL. """
     def __init__(self):

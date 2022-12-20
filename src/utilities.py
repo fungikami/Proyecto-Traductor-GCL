@@ -102,8 +102,11 @@ def convertNumberPreApp(number):
 
 def convertNumberPreAppAux(num):
     if len(num) == 1:
+        if num == '-':
+            return MINUS
         return INTDICT[int(num)]
-    return f'({CONCAT} {INTDICT[int(num[0])]} {convertNumberPreAppAux(num[1:])})'
+
+    return f'({CONCAT} {convertNumberPreAppAux(num[0])} {convertNumberPreAppAux(num[1:])})'
     
 def convertBooleanPreApp(boolean):
     return BOOLDICT[boolean]
