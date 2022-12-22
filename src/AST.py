@@ -13,14 +13,16 @@ import sys
 N = 1
 
 class AST:
-    def __init__(self, row, column) -> None:
+    def __init__(self, row, column, value='') -> None:
         self.row = row
         self.column = column
+        self.value = value
 
 class Program(AST):
     def __init__(self, block, row, column) -> None:
         super().__init__(row, column)
         self.block = block
+        self.value = 'Program'
 
         # Crea una Tabla de Símbolos
         self.symTabStack = SymbolTable()
@@ -51,6 +53,7 @@ class Block(AST):
         super().__init__(row, column)
         self.decls = decls
         self.instrs = instrs
+        self.value = 'Block'
 
     def decorate(self, symTabStack: SymbolTable):
         # Empila una nueva Tabla de Símbolos. 
@@ -95,6 +98,7 @@ class Declare(AST):
     def __init__(self, seq_decls, row, column) -> None:
         super().__init__(row, column)
         self.seq_decls = seq_decls
+        self.value = 'Declare'
 
     def decorate(self, symTabStack):
         if self.seq_decls:
@@ -112,6 +116,7 @@ class Declaration(AST):
         super().__init__(row, column)
         self.idLists = idLists
         self.type = type
+        self.value = 'Declaration'
 
     def decorate(self, symTabStack):
         # Si es un arreglo, verifica que el tamaño sea > 0
@@ -174,6 +179,7 @@ class Sequencing(AST):
 class Skip(AST):
     def __init__(self, row, column) -> None:
         super().__init__(row, column)
+        self.value = 'skip'
         
     def decorate(self, symTabStack):
         pass
