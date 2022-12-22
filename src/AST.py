@@ -457,7 +457,7 @@ class ReadArray(AST):
         return f'{"-" * level}ReadArray | type: {self.type}\n{self.id.printAST(level + 1)}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return tuplePreApp(self.id.printPreApp(esp), self.expr.printPreApp(esp))
 
 class WriteArray(AST):
     def __init__(self, id, expr, row, column) -> None:
@@ -520,7 +520,7 @@ class Print(AST):
         return f'{"-" * level}Print\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return f'()' 
 
 # ------------------ CONCAT ------------------
 class Concat(AST):
@@ -538,7 +538,7 @@ class Concat(AST):
         return f'{"-" * level}Concat\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return f'()' 
 
 # ------------------ IF ------------------
 class If(AST):
@@ -745,7 +745,6 @@ class Do(AST):
                 instr += f' [] {listCond[i]} --> {listInstr[i]}'
             instr += ' fi'
         semIfStr = f'|[ if {cond} --> {instr} [] !({cond}) --> skip fi ]|'
-        
         result = par.parse(semIfStr, lexer=lex)
         semIf = result.printPreApp(par, lex, esp)
         # ----------------------------------------------------------------------
@@ -840,7 +839,7 @@ class In(AST):
         return f'{"-" * level}In\n{self.id.printAST(level + 1)}\n{self.range.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return f'()' 
 
 class To(AST):
     def __init__(self, expr1, expr2, row, column) -> None:
@@ -859,7 +858,7 @@ class To(AST):
         return f'{"-" * level}To\n{self.expr1.printAST(level + 1)}\n{self.expr2.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return f'()' 
 
 # ------------------ TYPES ------------------
 class Type(AST):
@@ -872,12 +871,6 @@ class Type(AST):
 
     def decorate(self, symTabStack):
         pass
-
-    # def printAST(self, level):
-    #     return f'{"-" * level}Type\n{self.type}'
-
-    # def printPreApp(self, esp, typ=None):
-    #     return f'to-do' 
 
 class ArrayType(AST):
     def __init__(self, start, end, row, column) -> None:
@@ -897,14 +890,6 @@ class ArrayType(AST):
         self.end.decorate(symTabStack)
         if self.end.type != INT:
             raise Exception(f'Error in row {self.row}, column {self.column}: El tipo de la expresión esperado es {INT}, pero se obtuvo {self.end.type}')
-
-    # def printAST(self, level):
-    #     print("-" * level + "ArrayType")
-    #     self.start.printAST(level + 1)
-    #     self.end.printAST(level + 1)
-
-    # def printPreApp(self, esp, typ=None):
-    #     return f'to-do' 
 
 # ------------------ TERMINALS ------------------
 class Id(AST):
@@ -983,4 +968,4 @@ class String(AST):
         return f'{"-" * level}String: "{self.value}"'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        return f'()' 
