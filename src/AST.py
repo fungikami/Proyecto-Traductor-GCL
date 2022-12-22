@@ -80,7 +80,10 @@ class Block(AST):
         if len(esp[0]) == 0:
             toReturn = self.instrs.printPreApp(gesp, self.instrs.printPreApp(gesp))
         else:
-            toReturn = composePi(esp, self.instrs.printPreApp(esp))
+            if gesp == None:
+                toReturn = composePi(esp, self.instrs.printPreApp(esp))
+            else:
+                toReturn = composePi([{**gesp[0], **esp[0]}], self.instrs.printPreApp([{**gesp[0], **esp[0]}]))
 
         # Desempila el diccionario
         esp.pop()
@@ -142,6 +145,7 @@ class Sequencing(AST):
         super().__init__(row, column)
         self.instr1 = instr1
         self.instr2 = instr2
+        self.value = f'{instr1.value}; {instr2.value}'
 
     def decorate(self, symTabStack):
         self.instr1.decorate(symTabStack)
@@ -661,6 +665,8 @@ class Do(AST):
     def __init__(self, stmts, row, column) -> None:
         super().__init__(row, column)
         self.stmts = stmts
+        self.value = f'do'
+        
 
     def decorate(self, symTabStack):
         self.stmts.decorate(symTabStack)
@@ -760,6 +766,8 @@ class For(AST):
         super().__init__(row, column)
         self.range = range
         self.instr = instr
+        self.value = f'''for {self.range.value} --> {self.instr.value} rof'''
+
 
     def decorate(self, symTabStack):
         symTabStack.open_scope()
@@ -770,13 +778,25 @@ class For(AST):
         return f'{"-" * level}For\n{self.range.printAST(level + 1)}\n{self.instr.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+        semForStr = f'''
+|[
+  declare {self.range.id.value} : int
+  {self.range.id.value} := {self.range.range.expr1.value};
+  do {self.range.id.value} <= {self.range.range.expr2.value} -->
+    {self.instr.value};
+    {self.range.id.value} := {self.range.id.value} + 1
+  od
+]|'''
+        result = par.parse(semForStr, lexer=lex)#, debug=True)
+        return result.printPreApp(par, lex, esp)
+        # return f'to-do' 
 
 class In(AST):
     def __init__(self, id, range, row, column) -> None:
         super().__init__(row, column)
         self.id = id
         self.range = range
+        self.value = f'{self.id.value} in {self.range.value}'
 
     def decorate(self, symTabStack):
         symTabStack.insert(self.id.value, INT, self.range.expr1.value, self.row, self.column, True)
@@ -794,6 +814,7 @@ class To(AST):
         super().__init__(row, column)
         self.expr1 = expr1
         self.expr2 = expr2
+        self.value = f'{self.expr1.value} to {self.expr2.value}'
 
     def decorate(self, symTabStack):
         self.expr1.decorate(symTabStack)

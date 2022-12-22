@@ -2,7 +2,7 @@
   declare
     x : int
   x := 1;
-  do x < 3 -->
+  for y in 1 to 3 -->
     x := x + 1
-  od
+  rof
 ]|
