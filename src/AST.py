@@ -597,6 +597,16 @@ class Guard(AST):
         guards = self.guards.printSemCond(esp)
         return f'({CUP} {guard} {guards})'
 
+    def getCond(self, listCond = []):
+        self.guards.getCond(listCond)
+        self.guard.getCond(listCond)
+        return listCond
+
+    def getInstr(self, listInstr = []):
+        self.guards.getInstr(listInstr)
+        self.guard.getInstr(listInstr)
+        return listInstr
+
 class Then(AST):
     def __init__(self, expr, stmts, row, column) -> None:
         super().__init__(row, column)
@@ -655,10 +665,12 @@ class Then(AST):
         ''' Retorna Ti '''
         return self.getSetCond(esp)
 
-    # ---------------------------------------------------------------------
+    # ------------------------------ CASO DO ------------------------------  
+    def getCond(self, listCond = []):
+        listCond.append(self.expr.value)
 
-    # ------------------------------ CASO DO ------------------------------
-    
+    def getInstr(self, listInstr = []):
+        listInstr.append(self.stmts.value)
 
 # ------------------ DO LOOP ------------------
 class Do(AST):
@@ -667,7 +679,6 @@ class Do(AST):
         self.stmts = stmts
         self.value = f'do'
         
-
     def decorate(self, symTabStack):
         self.stmts.decorate(symTabStack)
 
@@ -694,13 +705,25 @@ class Do(AST):
         inPesp = inRangePreApp(C, Pesp)                 # C in P(Esp'xEsp')
 
         # 3. (∀m|0 ≤ m ∧ m ≤ i : (m = 0 ∧ D(m) = sem[[Do0]]) ∨ (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]]))
-        # (m = 0 ∧ D(m) = sem[[Do0 ]])
-        semDo = f'({C})'                                                                    # ARREGLAR
-        semDoStr = f'|[ if !({self.stmts.expr.value}) --> skip fi ]|'
-        
+        # (m = 0 ∧ D(m) = sem[[Do0]])
+
+        # ------------------------------ sem[[Do0]] ------------------------------
+        # Si es do de una sóla guardia
+        if (isinstance(self.stmts, Then)): 
+            cond = self.stmts.expr.value                           
+        # Si es do de varias guardias, obtiene todas las condiciones
+        else:
+            # Unir cada cond con un \/ para formar la condición
+            listCond = self.stmts.getCond()
+            cond = ""
+            for c in listCond:
+                cond += f'({c}) \\/ '
+            cond = cond[:-4]            
+                    
+        semDoStr = f'|[ if !({cond}) --> skip fi ]|'
         result = par.parse(semDoStr, lexer=lex)
-        # result.decorate()
         semDo = result.printPreApp(par, lex, esp)
+        # ----------------------------------------------------------------------
 
         dm = f'({CONCAT} ({D}) ({PAREN} {m}))'
         dm1 = binOpPreApp(EQUAL, dm, semDo) 
@@ -708,13 +731,24 @@ class Do(AST):
 
         # (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]])
         dm2 = binOpPreApp(EQUAL, dm, f'({CONCAT} ({D}) ({PAREN} ({MINUS} {ONE} {m})))') 
-        body2 = binOpPreApp(AND, binOpPreApp(GREATER, m, ZERO), dm2)
-        semIf = f'({C})'                                                                    # ARREGLAR 
-        semIfStr = f'|[ if {self.stmts.expr.value} --> {self.stmts.stmts.value} [] !({self.stmts.expr.value}) --> skip fi ]|'
-
+        body2 = binOpPreApp(AND, binOpPreApp(GREATER, m, ZERO), dm2)     
+             
+        # ------------------------------ sem[[If]] ------------------------------                                         
+        # Si es do de una sóla instrucción
+        if (isinstance(self.stmts, Then)): 
+            instr = self.stmts.stmts.value                          
+        # Si es do de varias guardias, se construye una instrucción if con las guardias
+        else:
+            listInstr = self.stmts.getInstr()
+            instr = f'if {listCond[0]} --> {listInstr[0]}'
+            for i in range(1, len(listInstr)):
+                instr += f' [] {listCond[i]} --> {listInstr[i]}'
+            instr += ' fi'
+        semIfStr = f'|[ if {cond} --> {instr} [] !({cond}) --> skip fi ]|'
+        
         result = par.parse(semIfStr, lexer=lex)
-        # result.decorate()
         semIf = result.printPreApp(par, lex, esp)
+        # ----------------------------------------------------------------------
 
         body2 = compose([body2, semIf])
 
@@ -767,7 +801,6 @@ class For(AST):
         self.range = range
         self.instr = instr
         self.value = f'''for {self.range.value} --> {self.instr.value} rof'''
-
 
     def decorate(self, symTabStack):
         symTabStack.open_scope()
@@ -843,8 +876,8 @@ class Type(AST):
     # def printAST(self, level):
     #     return f'{"-" * level}Type\n{self.type}'
 
-    def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+    # def printPreApp(self, esp, typ=None):
+    #     return f'to-do' 
 
 class ArrayType(AST):
     def __init__(self, start, end, row, column) -> None:
@@ -870,8 +903,8 @@ class ArrayType(AST):
     #     self.start.printAST(level + 1)
     #     self.end.printAST(level + 1)
 
-    def printPreApp(self, esp, typ=None):
-        return f'to-do' 
+    # def printPreApp(self, esp, typ=None):
+    #     return f'to-do' 
 
 # ------------------ TERMINALS ------------------
 class Id(AST):
