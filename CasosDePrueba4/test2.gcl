@@ -1,0 +1,8 @@
+|[
+  declare
+    x, y : int;
+    arr : array[1..3];
+    bo1, bo2 : bool
+  x := 1;
+  bo1 := true
+]|

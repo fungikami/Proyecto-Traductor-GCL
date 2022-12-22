@@ -1,0 +1,8 @@
+|[
+  declare
+    x : int
+  x := 1;
+  do x < 3 -->
+    x := x + 1
+  od
+]|

@@ -38,7 +38,11 @@ class Program(AST):
     def printAST(self, level):
         return self.block.printAST(level)
 
-    def printPreApp(self):
+    def printPreApp(self, parser, lexer, esp=None):
+        global par, lex, gesp
+        par = parser
+        lex = lexer
+        gesp = esp
         return self.block.printPreApp(self.preAppStack)
 
 # ------------------ BLOCK ------------------
@@ -73,7 +77,10 @@ class Block(AST):
         self.decls.printPreApp(esp)
 
         # Compone los pi's con la sem[S]
-        toReturn = composePi(esp, self.instrs.printPreApp(esp))
+        if len(esp[0]) == 0:
+            toReturn = self.instrs.printPreApp(gesp, self.instrs.printPreApp(gesp))
+        else:
+            toReturn = composePi(esp, self.instrs.printPreApp(esp))
 
         # Desempila el diccionario
         esp.pop()
@@ -94,7 +101,8 @@ class Declare(AST):
         return f'{"-" * level}Symbols Table\n{self.seq_decls.printAST(level + 1, True)}'
 
     def printPreApp(self, esp, typ=None):
-        return self.seq_decls.printPreApp(esp, True)
+        if self.seq_decls:
+            return self.seq_decls.printPreApp(esp, True)
 
 class Declaration(AST):
     def __init__(self, idLists, type, row, column) -> None:
@@ -179,6 +187,7 @@ class Asig(AST):
         super().__init__(row, column)
         self.id = id
         self.expr = expr
+        self.value = f'{id.value} := {expr.value}'
 
     def decorate(self, symTabStack):
         # Busca el tipo del id en la tabla de símbolos
@@ -414,7 +423,7 @@ class Not(AST):
         return f'{"-" * level}Not | type: {self.type}\n{self.expr.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
-        return f'({NOT} {self.expr.printPreApp()})'
+        return f'({NOT} {self.expr.printPreApp(esp)})'
 
 # ------------------ ARRAYS ------------------
 class ReadArray(AST):
@@ -540,6 +549,8 @@ class If(AST):
         return f'{"-" * level}If\n{self.guards.printAST(level + 1)}'
 
     def printPreApp(self, esp, typ=None):
+        if isinstance(self.guards, Then):
+            return self.guards.printPreApp(esp, isIf=True)
         return self.guards.printPreApp(esp)
 
 class Guard(AST):
@@ -595,7 +606,23 @@ class Then(AST):
     def printAST(self, level):
         return f'{"-" * level}Then\n{self.expr.printAST(level + 1)}\n{self.stmts.printAST(level + 1)}'
 
-    def printPreApp(self, esp, typ=None):
+    def printPreApp(self, esp, typ=None, isIf=False):
+        if isIf:
+            # Unión de las sem[<inst>] o id_ti
+            instr = self.printSemInstr(esp)
+
+            # Unión de los Ti
+            cond = self.printSemCond(esp)
+
+            # (U Ti)^C
+            cond = f'({SUPERC} {cond})'
+
+            # (U Ti)^C x abort
+            abort = setPreApp(None, ABORT)
+            condXAbort =f'({CROSSPROD} {abort} {cond})'
+
+            # (U sem[<inst>] o id) U ((U Ti)^C x abort) 
+            return f'({CUP} {condXAbort} {instr})'
         return f'to-do' 
 
     def getSetCond(self, esp):
@@ -663,6 +690,12 @@ class Do(AST):
         # 3. (∀m|0 ≤ m ∧ m ≤ i : (m = 0 ∧ D(m) = sem[[Do0]]) ∨ (m > 0 ∧ D(m) = D(m − 1) ◦ sem[[If ]]))
         # (m = 0 ∧ D(m) = sem[[Do0 ]])
         semDo = f'({C})'                                                                    # ARREGLAR
+        semDoStr = f'|[ if !({self.stmts.expr.value}) --> skip fi ]|'
+        
+        result = par.parse(semDoStr, lexer=lex)
+        # result.decorate()
+        semDo = result.printPreApp(par, lex, esp)
+
         dm = f'({CONCAT} ({D}) ({PAREN} {m}))'
         dm1 = binOpPreApp(EQUAL, dm, semDo) 
         body1 = binOpPreApp(AND, binOpPreApp(EQUAL, m, ZERO), dm1)
@@ -671,6 +704,12 @@ class Do(AST):
         dm2 = binOpPreApp(EQUAL, dm, f'({CONCAT} ({D}) ({PAREN} ({MINUS} {ONE} {m})))') 
         body2 = binOpPreApp(AND, binOpPreApp(GREATER, m, ZERO), dm2)
         semIf = f'({C})'                                                                    # ARREGLAR 
+        semIfStr = f'|[ if {self.stmts.expr.value} --> {self.stmts.stmts.value} [] !({self.stmts.expr.value}) --> skip fi ]|'
+
+        result = par.parse(semIfStr, lexer=lex)
+        # result.decorate()
+        semIf = result.printPreApp(par, lex, esp)
+
         body2 = compose([body2, semIf])
 
         bodyForAll = binOpPreApp(OR, body1, body2)
@@ -690,7 +729,7 @@ class Do(AST):
         unionCond = binOpPreApp(CUP, idFun, setAbort)
         cond = compose([cdi, unionCond])
 
-        # 6. (∃D|D ∈ (Esp′Esp )[0..i] : bodyExist2)
+        # 6. (∃D|D ∈ (Esp′^Esp' )[0..i] : bodyExist2)
         bodyExist2 = binOpPreApp(AND, forAll, cond)         # 4. AND 5.
         rangeArray = f'({RANGEARRAY} {i} {ZERO})'
         rangeExist2 = f'({SUPERSCRIPT} ({rangeArray}) ({SUPERSCRIPT} {espP} {espP}))'

@@ -36,7 +36,7 @@ if __name__ == '__main__':
         try:
             result.decorate()
             #print(result.printAST(0))
-            print(result.printPreApp())
+            print(result.printPreApp(parser, lexer))
         except Exception as e:
             print(e)
             exit(1)
