@@ -285,6 +285,10 @@ def p_lambda(p):
     pass
 
 def find_column(input, token):
+    if isinstance(token.lexpos, int):
+        line_start = input.rfind('\n', 0, token.lexpos) + 1
+        return (token.lexpos - line_start) + 1
+
     line_start = input.rfind('\n', 0, token.lexpos(1)) + 1
     return (token.lexpos(1) - line_start) + 1
 
