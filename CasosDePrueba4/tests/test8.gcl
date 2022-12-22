@@ -1,0 +1,7 @@
+|[
+    declare
+        x : int
+    do x<=1 -->
+        skip
+    od
+]|
